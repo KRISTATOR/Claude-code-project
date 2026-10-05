@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { kinds } from '@core/kinds';
 import type { RecordRow } from '@core/model';
+import { fieldText } from '@core/richtext';
 import { SearchIndex, type SearchDoc } from '@core/search';
 import { useTeamRecords } from '../../data/hooks';
 import { recordLink } from '../links';
@@ -14,9 +15,7 @@ import { useTeam, useWorkspace } from '../workspace';
 
 function bodyOf(record: RecordRow, fileText: string | undefined): string {
   const fields = kinds[record.kind]?.searchFields ?? [];
-  const parts = fields
-    .map((field) => record.data[field])
-    .filter((value): value is string => typeof value === 'string');
+  const parts = fields.map((field) => fieldText(record.data[field])).filter(Boolean);
   if (fileText) parts.push(fileText);
   return parts.join('\n');
 }

@@ -1,0 +1,81 @@
+import { expect, type Locator, type Page } from '@playwright/test';
+import { connect, signUp, uniqueEmail, type LaunchedApp, type StackEnv } from './app';
+
+/** Clicks a navigation item, opening its collapsed group first if needed. */
+export async function go(page: Page, label: string): Promise<void> {
+  const nav = page.getByRole('navigation');
+  const item = nav.getByText(label, { exact: true });
+  if (!(await item.isVisible())) {
+    await nav.getByText('Příběh', { exact: true }).click();
+  }
+  await item.click();
+}
+
+export async function syncNow(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Synchronizovat teď' }).click();
+  await expect(page.getByTestId('sync-state')).toHaveAttribute('data-state', 'idle');
+}
+
+export async function shareWithEveryone(page: Page | Locator): Promise<void> {
+  const editor = page.getByTestId('visibility-editor');
+  await editor.getByText('Všichni v týmu').click();
+  await editor.getByRole('button', { name: 'Uložit viditelnost' }).click();
+  await expect(editor.getByRole('button', { name: 'Uložit viditelnost' })).toBeHidden();
+}
+
+/** Picks an option of a Mantine Select (the options list is portalled to the page). */
+export async function choose(scope: Page | Locator, label: string, option: string): Promise<void> {
+  await scope.getByRole('combobox', { name: label, exact: true }).click();
+  const page = 'keyboard' in scope ? scope : scope.page();
+  await page.getByRole('option', { name: option, exact: true }).click();
+}
+
+/** Answers the small "name" dialog used to create records. */
+export async function named(page: Page, name: string): Promise<void> {
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Název').fill(name);
+  await dialog.getByRole('button', { name: 'Vytvořit' }).click();
+  await expect(dialog).toBeHidden();
+}
+
+/**
+ * An organizer with a team, a shared world "Pohraničí" and a shared game
+ * "Pevnost na hranici"; optionally a player who joined with an invite.
+ */
+export async function setUpTeam(
+  stack: StackEnv,
+  organizer: LaunchedApp,
+  player?: LaunchedApp,
+): Promise<void> {
+  const { page } = organizer;
+  await connect(page, stack);
+  await signUp(page, uniqueEmail('kvido'));
+  await page.getByLabel('Vaše jméno, jak ho uvidí ostatní').fill('Kvido Organizátor');
+  await page.getByLabel('Název týmu').fill('Spolek Lipnov');
+  await page.getByRole('button', { name: 'Založit tým' }).click();
+  await expect(page.getByTestId('team-name')).toHaveText('Spolek Lipnov');
+
+  await go(page, 'Světy a hry');
+  await page.getByRole('button', { name: 'Nový svět' }).click();
+  await page.getByLabel('Název').last().fill('Pohraničí');
+  await page.getByRole('button', { name: 'Vytvořit' }).click();
+  await shareWithEveryone(page);
+  await page.getByRole('button', { name: 'Nová hra' }).first().click();
+  await page.getByRole('dialog').getByLabel('Název').fill('Pevnost na hranici');
+  await page.getByRole('button', { name: 'Vytvořit' }).click();
+  await expect(page.getByLabel('Název').first()).toHaveValue('Pevnost na hranici');
+  await shareWithEveryone(page);
+  if (!player) return;
+
+  await go(page, 'Lidé');
+  await page.getByRole('tab', { name: 'Pozvánky' }).click();
+  await page.getByRole('button', { name: 'Vytvořit pozvánku' }).click();
+  const code = (await page.getByTestId('invite-code').textContent()) ?? '';
+  await connect(player.page, stack);
+  await signUp(player.page, uniqueEmail('hana'));
+  await player.page.getByLabel('Vaše jméno, jak ho uvidí ostatní').fill('Hana Hráčka');
+  await player.page.getByLabel('Kód pozvánky').fill(code);
+  await player.page.getByRole('button', { name: 'Připojit se k týmu' }).click();
+  await expect(player.page.getByRole('heading', { name: 'Ahoj, Hana Hráčka' })).toBeVisible();
+  await syncNow(page);
+}

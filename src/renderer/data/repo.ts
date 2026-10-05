@@ -11,6 +11,7 @@ import {
   type RecordRow,
   type Visibility,
 } from '@core/model';
+import type { CloneResult } from '@core/lore/clone';
 import type { Cache } from './cache';
 import { classifyError, RemoteError } from './remote';
 import { errorFields, type Client } from './supabase';
@@ -215,6 +216,47 @@ export class Repo {
       await this.attach(recordId, id, relation);
   }
 
+  /**
+   * Inserts a cloned game (src/core/lore/clone.ts) in a few requests: records
+   * in chunks (parents come first, so each chunk's parents already exist),
+   * then secrets, access lists and attached people.
+   */
+  async insertClone(clone: CloneResult): Promise<void> {
+    const team = { team_id: this.teamId };
+    for (const rows of chunked(clone.records, 200)) {
+      const inserted = z.array(recordRow).parse(
+        await call(
+          this.client
+            .from('records')
+            .insert(rows.map((row) => ({ ...row, ...team })))
+            .select(),
+        ),
+      );
+      await this.cache.records.bulkPut(inserted);
+    }
+    for (const rows of chunked(clone.secrets, 200)) {
+      const inserted = z.array(recordSecretRow).parse(
+        await call(
+          this.client
+            .from('record_secrets')
+            .insert(rows.map((row) => ({ ...row, ...team })))
+            .select(),
+        ),
+      );
+      await this.cache.secrets.bulkPut(inserted);
+    }
+    for (const rows of chunked(clone.access, 200)) {
+      await call(
+        this.client.from('record_access').insert(rows.map((row) => ({ ...row, ...team }))),
+      );
+    }
+    for (const rows of chunked(clone.people, 200)) {
+      await call(
+        this.client.from('record_people').insert(rows.map((row) => ({ ...row, ...team }))),
+      );
+    }
+  }
+
   /** Hard delete (organizers): used for small records like relationships. */
   async deleteRecord(recordId: string): Promise<void> {
     await call(this.client.from('records').delete().eq('id', recordId));
@@ -337,4 +379,10 @@ export async function joinTeam(client: Client, code: string, displayName: string
   return z
     .string()
     .parse(await call(client.rpc('join_team', { p_code: code, p_display_name: displayName })));
+}
+
+function chunked<T>(items: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += size) result.push(items.slice(i, i + size));
+  return result;
 }

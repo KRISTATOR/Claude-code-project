@@ -33,6 +33,29 @@ export function recordLink(
       return `/definice/${record.id}`;
     case 'sheet_template':
       return '/postavy?tab=sablona';
+    case 'page':
+      return `/encyklopedie/${record.id}`;
+    case 'canon_entry':
+      return '/kanon';
+    case 'history_event':
+      return '/dejiny';
+    case 'beat':
+      return '/prubeh';
+    case 'plot_thread':
+      return `/zapletky/${record.id}`;
+    case 'clue':
+      return '/zapletky';
+    case 'quest':
+      return `/ukoly?q=${record.id}`;
+    case 'hook':
+      return record.parent_id ? `/postavy/${record.parent_id}` : '/zapletky';
+    case 'issue':
+      return '/problemy';
+    case 'rulebook':
+    case 'rule_section':
+    case 'glossary_term':
+    case 'rulebook_version':
+      return '/pravidla';
     default:
       return '/';
   }

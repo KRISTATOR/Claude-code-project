@@ -24,6 +24,7 @@ import { notifyError, notifySuccess } from '../../components/notify';
 import { VisibilityBadge, VisibilityEditor } from '../../components/VisibilityEditor';
 import { useRecord, useRecords } from '../../data/hooks';
 import { useTeam } from '../workspace';
+import { CloneGameButton } from '../../lore/CloneGameDialog';
 
 export function WorldsPage() {
   const { t } = useTranslation();
@@ -276,6 +277,11 @@ function RecordDetail({
             )}
           </Stack>
         </Paper>
+        {isGame && canEdit && (
+          <Group mt="md">
+            <CloneGameButton game={record} />
+          </Group>
+        )}
         {!isGame && (
           <Paper withBorder p="md" mt="md">
             <Group justify="space-between" mb="xs">

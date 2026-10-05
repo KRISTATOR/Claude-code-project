@@ -25,6 +25,7 @@ import {
   costumeStatuses,
   definitionKind,
   factionKind,
+  hookKind,
   readData,
   readSecret,
   relationshipKind,
@@ -45,6 +46,7 @@ import {
   useTeamRecords,
 } from '../data/hooks';
 import { useSheetTemplate } from './CharactersPage';
+import { HookDialog } from '../lore/PlotsPage';
 import { Field, useRun } from './common';
 
 export function CharacterPage() {
@@ -331,6 +333,7 @@ function CharacterSheet({
               </Button>
             </Group>
           )}
+          {game && <CharacterHooks game={game} character={record} />}
         </Stack>
       </Grid.Col>
       <Grid.Col span={{ base: 12, lg: 4 }}>
@@ -362,6 +365,71 @@ function CharacterSheet({
         </Stack>
       </Grid.Col>
     </Grid>
+  );
+}
+
+/** Personal hooks (M3): organizers manage them; the player sees the shared ones. */
+function CharacterHooks({ game, character }: { game: RecordRow; character: RecordRow }) {
+  const { t } = useTranslation();
+  const { canEdit, isOrganizer } = useTeam();
+  const [editing, setEditing] = useState<RecordRow | 'new' | null>(null);
+  const hooks = (useGameRecords('hook', game.id) ?? []).filter(
+    (row) => row.parent_id === character.id,
+  );
+  if (hooks.length === 0 && !canEdit) return null;
+  return (
+    <Paper withBorder p="sm" data-testid="hooks">
+      <Group justify="space-between" mb={4}>
+        <Title order={5}>{t('hooks.title')}</Title>
+        {canEdit && (
+          <Button size="compact-xs" variant="light" onClick={() => setEditing('new')}>
+            {t('hooks.newHook')}
+          </Button>
+        )}
+      </Group>
+      {hooks.length === 0 && (
+        <Text size="sm" c="dimmed">
+          {t('hooks.empty')}
+        </Text>
+      )}
+      <Stack gap={4}>
+        {hooks.map((row) => {
+          const data = readData(hookKind, row);
+          return (
+            <Group
+              key={row.id}
+              gap="xs"
+              wrap="nowrap"
+              style={{ cursor: canEdit ? 'pointer' : undefined }}
+              onClick={() => canEdit && setEditing(row)}
+            >
+              <Text size="sm" style={{ whiteSpace: 'pre-wrap' }}>
+                {data.text}
+              </Text>
+              {isOrganizer && (
+                <Badge size="xs" variant="light" color={row.inherit_audience ? 'blue' : 'red'}>
+                  {row.inherit_audience ? t('hooks.sharedBadge') : t('hooks.secretBadge')}
+                </Badge>
+              )}
+              {isOrganizer && data.delivered && (
+                <Badge size="xs" variant="light" color="teal">
+                  {t('hooks.delivered')}
+                </Badge>
+              )}
+            </Group>
+          );
+        })}
+      </Stack>
+      {editing && (
+        <HookDialog
+          game={game}
+          record={editing === 'new' ? null : editing}
+          threadId={null}
+          characterId={character.id}
+          onClose={() => setEditing(null)}
+        />
+      )}
+    </Paper>
   );
 }
 

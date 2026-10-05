@@ -15,8 +15,18 @@ import {
 } from '@mantine/core';
 import { spotlight } from '@mantine/spotlight';
 import {
+  IconBook,
+  IconBook2,
   IconBooks,
   IconCalendarTime,
+  IconCertificate,
+  IconChecks,
+  IconClipboardList,
+  IconFeather,
+  IconHelpCircle,
+  IconHourglass,
+  IconListDetails,
+  IconRoute,
   IconFlag,
   IconFolders,
   IconHierarchy2,
@@ -49,6 +59,15 @@ import { NpcsPage } from '../tools/NpcsPage';
 import { PhasesPage } from '../tools/PhasesPage';
 import { RelationshipsPage } from '../tools/RelationshipsPage';
 import { SchedulePage } from '../tools/SchedulePage';
+import { CanonPage } from '../lore/CanonPage';
+import { ConsistencyPage } from '../lore/ConsistencyPage';
+import { HistoryPage } from '../lore/HistoryPage';
+import { IssuesPage } from '../lore/IssuesPage';
+import { PlotsPage } from '../lore/PlotsPage';
+import { QuestsPage } from '../lore/QuestsPage';
+import { RulesPage } from '../lore/RulesPage';
+import { RunOfShowPage } from '../lore/RunOfShowPage';
+import { WikiPage } from '../lore/WikiPage';
 import { HomePage } from './pages/HomePage';
 import { PeoplePage } from './pages/PeoplePage';
 import { SearchPage } from './pages/SearchPage';
@@ -97,6 +116,37 @@ export function Shell() {
     },
     { to: '/faze', label: t('nav.phases'), icon: <IconTimeline size={18} />, organizerOnly: true },
     { to: '/definice', label: t('nav.definitions'), icon: <IconBooks size={18} /> },
+  ];
+  const story: NavItem[] = [
+    { to: '/encyklopedie', label: t('nav.wiki'), icon: <IconBook size={18} /> },
+    { to: '/dejiny', label: t('nav.history'), icon: <IconHourglass size={18} /> },
+    { to: '/ukoly', label: t('nav.quests'), icon: <IconClipboardList size={18} /> },
+    { to: '/pravidla', label: t('nav.rules'), icon: <IconBook2 size={18} /> },
+    { to: '/zapletky', label: t('nav.plots'), icon: <IconRoute size={18} />, organizerOnly: true },
+    {
+      to: '/prubeh',
+      label: t('nav.runOfShow'),
+      icon: <IconListDetails size={18} />,
+      organizerOnly: true,
+    },
+    {
+      to: '/kanon',
+      label: t('nav.canon'),
+      icon: <IconCertificate size={18} />,
+      organizerOnly: true,
+    },
+    {
+      to: '/problemy',
+      label: t('nav.issues'),
+      icon: <IconHelpCircle size={18} />,
+      organizerOnly: true,
+    },
+    {
+      to: '/kontrola',
+      label: t('nav.consistency'),
+      icon: <IconChecks size={18} />,
+      organizerOnly: true,
+    },
   ];
   const teamItems: NavItem[] = [
     { to: '/lide', label: t('nav.people'), icon: <IconUsers size={18} />, organizerOnly: true },
@@ -168,6 +218,16 @@ export function Shell() {
             <Divider my={4} />
             <GameSwitcher />
             {allowed(game).map(link)}
+            <NavLink
+              label={t('nav.story')}
+              leftSection={<IconFeather size={18} />}
+              py={6}
+              defaultOpened={story.some((item) => location.pathname.startsWith(item.to))}
+              childrenOffset={12}
+              data-testid="nav-story"
+            >
+              {allowed(story).map(link)}
+            </NavLink>
             <Divider my={4} />
             {allowed(teamItems).map(link)}
           </Stack>
@@ -211,13 +271,26 @@ export function Shell() {
           <Route path="/faze" element={<PhasesPage />} />
           <Route path="/definice" element={<DefinitionsPage />} />
           <Route path="/definice/:id" element={<DefinitionsPage />} />
+          <Route path="/encyklopedie" element={<WikiPage />} />
+          <Route path="/encyklopedie/:id" element={<WikiPage />} />
+          <Route path="/dejiny" element={<HistoryPage />} />
+          <Route path="/ukoly" element={<QuestsPage />} />
+          <Route path="/pravidla" element={<RulesPage />} />
+          <Route path="/zapletky" element={<PlotsPage />} />
+          <Route path="/zapletky/:id" element={<PlotsPage />} />
+          <Route path="/prubeh" element={<RunOfShowPage />} />
+          <Route path="/kanon" element={<CanonPage />} />
+          <Route path="/problemy" element={<IssuesPage />} />
+          <Route path="/kontrola" element={<ConsistencyPage />} />
           <Route path="/lide" element={<PeoplePage />} />
           <Route path="/kos" element={<TrashPage />} />
           <Route path="/nastaveni" element={<SettingsPage />} />
           <Route path="*" element={<HomePage />} />
         </Routes>
       </AppShell.Main>
-      <CommandPalette pages={[...allowed(general), ...allowed(game), ...allowed(teamItems)]} />
+      <CommandPalette
+        pages={[...allowed(general), ...allowed(game), ...allowed(story), ...allowed(teamItems)]}
+      />
     </AppShell>
   );
 }

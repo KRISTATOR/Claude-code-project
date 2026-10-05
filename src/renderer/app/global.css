@@ -8,3 +8,22 @@ body,
 body {
   background: var(--mantine-color-body);
 }
+
+/* Rich text (TipTap) */
+.richtext .ProseMirror {
+  outline: none;
+  min-height: inherit;
+}
+.richtext .ProseMirror > :first-child {
+  margin-top: 0;
+}
+.wikilink {
+  color: var(--mantine-color-anchor);
+  text-decoration: underline dotted;
+  cursor: pointer;
+}
+.wikilink-missing {
+  color: var(--mantine-color-red-text);
+  text-decoration: line-through;
+  cursor: default;
+}

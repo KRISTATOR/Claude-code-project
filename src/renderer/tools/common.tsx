@@ -1,4 +1,5 @@
-import { Alert, Badge, Select, Textarea, type TextareaProps } from '@mantine/core';
+import { Alert, Badge, Select, Textarea, TextInput, type TextareaProps } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { RecordRow } from '@core/model';
@@ -76,4 +77,58 @@ export function StatusBadge({ color, children }: { color: string; children: Reac
       {children}
     </Badge>
   );
+}
+
+/** Asks for a name in a small dialog; calls `onName` with the trimmed name. */
+export function askName(options: {
+  title: string;
+  label: string;
+  placeholder?: string;
+  confirm: string;
+  cancel: string;
+  onName: (name: string) => void;
+}) {
+  let name = '';
+  modals.openConfirmModal({
+    title: options.title,
+    children: (
+      <TextInput
+        data-autofocus
+        label={options.label}
+        placeholder={options.placeholder}
+        onChange={(event) => {
+          name = event.currentTarget.value;
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' && name.trim()) {
+            modals.closeAll();
+            options.onName(name.trim());
+          }
+        }}
+      />
+    ),
+    labels: { confirm: options.confirm, cancel: options.cancel },
+    onConfirm: () => {
+      if (name.trim()) options.onName(name.trim());
+    },
+  });
+}
+
+/** Asks for a name with the usual Czech labels. */
+export function useAskName() {
+  const { t } = useTranslation();
+  return (title: string, onName: (name: string) => void, placeholder?: string) =>
+    askName({
+      title,
+      label: t('common.name'),
+      ...(placeholder ? { placeholder } : {}),
+      confirm: t('common.create'),
+      cancel: t('common.cancel'),
+      onName,
+    });
+}
+
+/** Records of a kind in the current game or, when not tied to a game, its world. */
+export function inScope(row: RecordRow, game: RecordRow): boolean {
+  return row.game_id === game.id || (row.game_id === null && row.world_id === game.world_id);
 }
