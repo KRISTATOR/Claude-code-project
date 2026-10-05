@@ -27,6 +27,7 @@ export class SupabaseRemote implements Remote {
       let query = this.client.from(table).select(options.columns ?? '*');
       if (options.eq) query = query.eq(options.eq.column, options.eq.value);
       if (options.since) query = query.gte('updated_at', options.since);
+      if (options.in) query = query.in(options.in.column, options.in.values);
       // A stable order keeps pagination correct while rows change.
       const orderColumn = options.since ? 'updated_at' : ORDER[table];
       query = query.order(orderColumn, { ascending: true });

@@ -22,6 +22,8 @@ export interface SelectOptions {
   since?: string;
   /** Column list; defaults to all columns. */
   columns?: string;
+  /** Only rows whose column is one of these values (keep lists short, ~100). */
+  in?: { column: string; values: string[] };
 }
 
 export interface Remote {

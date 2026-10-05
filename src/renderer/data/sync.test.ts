@@ -35,6 +35,8 @@ class FakeRemote implements Remote {
     if (eq) rows = rows.filter((row) => row[eq.column] === eq.value);
     const since = options?.since;
     if (since) rows = rows.filter((row) => String(row['updated_at']) >= since);
+    const within = options?.in;
+    if (within) rows = rows.filter((row) => within.values.includes(String(row[within.column])));
     if (options?.columns) {
       const columns = options.columns.split(',');
       rows = rows.map((row) => Object.fromEntries(columns.map((column) => [column, row[column]])));
@@ -272,6 +274,27 @@ describe('SyncEngine', () => {
     await Promise.all([first, second]);
     expect(await cache.records.count()).toBe(1);
     expect(await cache.people.count()).toBe(1);
+  });
+
+  it('fetches an old record as soon as the player is attached to it', async () => {
+    const world = record(randomUUID(), clock - 1000);
+    remote.visible.records = [world];
+    await engine.sync(teamId);
+    const character = randomUUID();
+    // Edited long ago, before the last cursor; attaching does not touch it.
+    remote.visible.records = [world, record(character, 1000, { kind: 'character' })];
+    remote.visible.record_people = [
+      {
+        record_id: character,
+        person_id: personId,
+        team_id: teamId,
+        relation: 'player',
+        updated_at: at(clock),
+      },
+    ];
+    clock += 1000;
+    await engine.sync(teamId);
+    expect(await cache.records.get(character)).toBeDefined();
   });
 
   it('keeps file locks and file text in step with the server', async () => {

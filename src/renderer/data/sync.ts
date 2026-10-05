@@ -28,6 +28,8 @@ export interface SyncStatus {
 export const OVERLAP_MS = 2 * 60 * 1000;
 /** How often to re-check which rows are still visible (revocation). */
 export const RECONCILE_MS = 10 * 60 * 1000;
+/** Ids per request when fetching rows that became visible (URL length). */
+const FETCH_CHUNK = 100;
 
 const PAGE_TABLES = {
   people: personRow,
@@ -192,10 +194,22 @@ export class SyncEngine {
     if (myRole === 'organizer') await this.pullSecrets(teamId);
     else await c.secrets.where('team_id').equals(teamId).delete();
 
+    // Attaching someone or changing an access list does not touch the record
+    // itself, so incremental pulls miss it; a changed audience forces a
+    // reconcile, which fetches records that became visible.
+    const audience = JSON.stringify([
+      myRole,
+      parsed.record_people.map((row) => `${row.record_id}:${row.person_id}:${row.relation}`).sort(),
+      parsed.record_access
+        .map((row) => `${row.record_id}:${row.person_id ?? ''}:${row.member_role ?? ''}`)
+        .sort(),
+    ]);
+    const audienceChanged = (await c.getMeta<string>(`audience:${teamId}`)) !== audience;
     const reconciledAt = (await c.getMeta<number>(`reconciledAt:${teamId}`)) ?? 0;
-    if (forceReconcile || this.now() - reconciledAt >= RECONCILE_MS) {
+    if (forceReconcile || audienceChanged || this.now() - reconciledAt >= RECONCILE_MS) {
       await this.reconcile(teamId, myRole === 'organizer');
       await c.setMeta(`reconciledAt:${teamId}`, this.now());
+      await c.setMeta(`audience:${teamId}`, audience);
     }
   }
 
@@ -276,6 +290,14 @@ export class SyncEngine {
     const visible = new Set(idRows.map((row) => row.id));
     const localIds = await this.cache.records.where('team_id').equals(teamId).primaryKeys();
     await this.cache.records.bulkDelete(localIds.filter((id) => !visible.has(id)));
+    const local = new Set(localIds);
+    const missing = [...visible].filter((id) => !local.has(id));
+    for (const ids of chunks(missing, FETCH_CHUNK)) {
+      const rows = z
+        .array(recordRow)
+        .parse(await this.remote.selectAll('records', { eq, in: { column: 'id', values: ids } }));
+      await this.cache.records.bulkPut(rows);
+    }
 
     const textRows = z
       .array(z.object({ file_id: z.string() }))
@@ -283,6 +305,17 @@ export class SyncEngine {
     const visibleText = new Set(textRows.map((row) => row.file_id));
     const localText = await this.cache.fileText.where('team_id').equals(teamId).primaryKeys();
     await this.cache.fileText.bulkDelete(localText.filter((id) => !visibleText.has(id)));
+    const localTextSet = new Set(localText);
+    const missingText = [...visibleText].filter((id) => !localTextSet.has(id));
+    for (const ids of chunks(missingText, FETCH_CHUNK)) {
+      const rows = z.array(fileTextRow).parse(
+        await this.remote.selectAll('file_text', {
+          eq,
+          in: { column: 'file_id', values: ids },
+        }),
+      );
+      await this.cache.fileText.bulkPut(rows);
+    }
 
     if (organizer) {
       const secretRows = z
@@ -336,6 +369,12 @@ export class SyncEngine {
       `reconciledAt:${teamId}`,
     ]);
   }
+}
+
+function chunks<T>(items: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < items.length; i += size) result.push(items.slice(i, i + size));
+  return result;
 }
 
 function maxTimestamp(values: string[], current: string | undefined): string {
