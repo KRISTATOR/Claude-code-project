@@ -41,7 +41,7 @@ test('wiki pages link to each other with [[ and show backlinks', async () => {
   await page.keyboard.type('roku 1352.');
   await expect(editor.locator('[data-wikilink]')).toHaveText('Lipnov');
   await page.getByRole('button', { name: 'Uložit', exact: true }).click();
-  await expect(page.getByText('Uloženo')).toBeVisible();
+  await expect(page.getByText('Uloženo').first()).toBeVisible();
 
   // The backlink is written by the database trigger and arrives with the next sync.
   await syncNow(page);
@@ -98,7 +98,7 @@ test('the rulebook keeps versions and shows what changed', async () => {
   await editor.click();
   await page.keyboard.type('Boj probíhá na dotek.');
   await page.getByRole('button', { name: 'Uložit', exact: true }).click();
-  await expect(page.getByText('Uloženo')).toBeVisible();
+  await expect(page.getByText('Uloženo').first()).toBeVisible();
 
   await page.getByRole('tab', { name: 'Verze' }).click();
   await page.getByRole('button', { name: 'Vydat verzi' }).click();

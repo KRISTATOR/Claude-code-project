@@ -127,7 +127,7 @@ test('the organizer writes a character sheet with player and organizer-only part
     .getByRole('textbox', { name: 'Poznámky organizátorů' })
     .fill('Ve fázi II zjistí, že kovář je její bratr.');
   await page.getByRole('button', { name: 'Uložit', exact: true }).click();
-  await expect(page.getByText('Uloženo')).toBeVisible();
+  await expect(page.getByText('Uloženo').first()).toBeVisible();
 
   await go(page, 'Postavy');
   const roster = page.getByTestId('roster');
