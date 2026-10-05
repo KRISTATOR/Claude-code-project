@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createWriteStream, type WriteStream } from 'node:fs';
+import { join } from 'node:path';
 import { dialog, type BrowserWindow } from 'electron';
 import { Zip, ZipDeflate, ZipPassThrough } from 'fflate';
 
@@ -16,16 +17,27 @@ interface Job {
 
 const jobs = new Map<string, Job>();
 
-export async function beginBackup(
+async function chooseTarget(
   window: BrowserWindow | null,
   defaultName: string,
 ): Promise<string | null> {
+  // End-to-end tests save into a known folder instead of answering a dialog.
+  const testDir = __ZAZEMI_TEST_BUILD__ ? process.env['ZAZEMI_SAVE_DIR'] : undefined;
+  if (testDir) return join(testDir, defaultName);
   const options = { defaultPath: defaultName, filters: [{ name: 'ZIP', extensions: ['zip'] }] };
   const result = window
     ? await dialog.showSaveDialog(window, options)
     : await dialog.showSaveDialog(options);
-  if (result.canceled || !result.filePath) return null;
-  const out = createWriteStream(result.filePath);
+  return result.canceled || !result.filePath ? null : result.filePath;
+}
+
+export async function beginBackup(
+  window: BrowserWindow | null,
+  defaultName: string,
+): Promise<string | null> {
+  const filePath = await chooseTarget(window, defaultName);
+  if (!filePath) return null;
+  const out = createWriteStream(filePath);
   let resolveDone: () => void = () => undefined;
   let rejectDone: (error: unknown) => void = () => undefined;
   const done = new Promise<void>((resolve, reject) => {
@@ -41,7 +53,7 @@ export async function beginBackup(
     if (final) out.end(() => resolveDone());
   });
   const token = randomUUID();
-  jobs.set(token, { zip, out, path: result.filePath, done });
+  jobs.set(token, { zip, out, path: filePath, done });
   return token;
 }
 

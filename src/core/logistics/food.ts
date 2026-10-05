@@ -252,3 +252,61 @@ export function sortMeals(meals: readonly RecordRow[]): RecordRow[] {
     return da.day - db.day || slotIndex(da.slot) - slotIndex(db.slot);
   });
 }
+
+export interface ShoppingSheetLabels {
+  sheet: string;
+  shop: string;
+  noShop: string;
+  item: string;
+  need: string;
+  buy: string;
+  unit: string;
+  packs: string;
+  cost: string;
+  total: string;
+  perHead: string;
+}
+
+/** The shopping list as an `.xlsx` to take to the shop or share. */
+export async function shoppingXlsx(
+  list: ShoppingList,
+  labels: ShoppingSheetLabels,
+): Promise<Uint8Array> {
+  const { default: ExcelJS } = await import('exceljs');
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Zázemí';
+  const sheet = workbook.addWorksheet(labels.sheet);
+  sheet.columns = [
+    { header: labels.shop, key: 'shop', width: 20 },
+    { header: labels.item, key: 'item', width: 30 },
+    { header: labels.need, key: 'need', width: 12 },
+    { header: labels.buy, key: 'buy', width: 12 },
+    { header: labels.unit, key: 'unit', width: 8 },
+    { header: labels.packs, key: 'packs', width: 10 },
+    { header: labels.cost, key: 'cost', width: 14 },
+  ];
+  sheet.getRow(1).font = { bold: true };
+  for (const shop of list.shops) {
+    for (const item of shop.items) {
+      sheet.addRow({
+        shop: shop.shop || labels.noShop,
+        item: item.name,
+        need: item.quantity,
+        buy: item.buy,
+        unit: item.unit,
+        packs: item.packs,
+        cost: item.cost,
+      });
+    }
+  }
+  const last = sheet.rowCount;
+  sheet.addRow([]);
+  const total = sheet.addRow([labels.total]);
+  total.getCell(7).value = { formula: `SUM(G2:G${last})`, result: list.total };
+  total.font = { bold: true };
+  const perHead = sheet.addRow([labels.perHead]);
+  perHead.getCell(7).value = list.perHead;
+  sheet.getColumn('cost').numFmt = '#,##0.00 "Kč"';
+  const buffer = await workbook.xlsx.writeBuffer();
+  return new Uint8Array(buffer);
+}

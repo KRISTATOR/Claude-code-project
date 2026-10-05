@@ -8,7 +8,13 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { PersonRow, RecordPersonRow, RecordRow, RecordSecretRow } from '@core/model';
+import type {
+  PersonRow,
+  RecordPersonRow,
+  RecordRow,
+  RecordSecretRow,
+  RegistrationRow,
+} from '@core/model';
 import { compareCzech } from '@core/text';
 import { usePreview, useRecordFilter } from '../app/preview';
 import { useTeam, useWorkspace } from '../app/workspace';
@@ -134,6 +140,30 @@ export function useInvites() {
   return useLiveQuery(
     () => cache.invites.where('team_id').equals(team.id).toArray(),
     [cache, team.id],
+  );
+}
+
+/**
+ * Registrations of one game that this user may read: all of them for
+ * organizers, only their own for anyone else (the server decides). In "view
+ * as player" only the previewed person's own registration is shown.
+ */
+export function useRegistrations(gameId: string | null | undefined): RegistrationRow[] | undefined {
+  const { cache } = useWorkspace();
+  const { team } = useTeam();
+  const preview = usePreview();
+  const rows = useLiveQuery(
+    async () =>
+      gameId
+        ? (await cache.registrations.where('game_id').equals(gameId).toArray())
+            .filter((row) => row.team_id === team.id)
+            .sort((a, b) => compareCzech(a.name, b.name))
+        : [],
+    [cache, team.id, gameId],
+  );
+  return useMemo(
+    () => (preview ? rows?.filter((row) => row.person_id === preview.personId) : rows),
+    [rows, preview],
   );
 }
 

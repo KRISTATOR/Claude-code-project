@@ -172,16 +172,7 @@ export class SyncEngine {
     const c = this.cache;
     await c.transaction(
       'rw',
-      [
-        c.people,
-        c.members,
-        c.invites,
-        c.access,
-        c.recordPeople,
-        c.links,
-        c.locks,
-        c.registrations,
-      ],
+      [c.people, c.members, c.invites, c.access, c.recordPeople, c.links, c.locks, c.registrations],
       async () => {
         await c.people.where('team_id').equals(teamId).delete();
         await c.people.bulkPut(parsed.people);

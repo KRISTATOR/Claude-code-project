@@ -1,4 +1,5 @@
 import {
+  Checkbox,
   Alert,
   Button,
   Group,
@@ -126,6 +127,8 @@ function Team() {
 
   const { files } = useDrive();
   const [progress, setProgress] = useState<string | null>(null);
+  // Personal data stays out of backups unless explicitly ticked (the brief).
+  const [withRegistrations, setWithRegistrations] = useState(false);
 
   async function exportBackup() {
     setBusy(true);
@@ -149,6 +152,9 @@ function Team() {
           record_people: byTeam(await cache.recordPeople.toArray()),
           record_links: byTeam(await cache.links.toArray()),
           file_text: byTeam(await cache.fileText.toArray()),
+          ...(withRegistrations
+            ? { registrations: byTeam(await cache.registrations.toArray()) }
+            : {}),
         },
       });
       await window.zazemi.backup.add(
@@ -209,6 +215,12 @@ function Team() {
           <Text size="sm" c="dimmed">
             {t('settings.backupHint')}
           </Text>
+          <Checkbox
+            label={t('settings.backupRegistrations')}
+            description={t('settings.backupRegistrationsHint')}
+            checked={withRegistrations}
+            onChange={(event) => setWithRegistrations(event.currentTarget.checked)}
+          />
           <Button
             w="fit-content"
             variant="light"

@@ -5,7 +5,7 @@ import { connect, signUp, uniqueEmail, type LaunchedApp, type StackEnv } from '.
 export async function go(page: Page, label: string): Promise<void> {
   const nav = page.getByRole('navigation');
   const item = nav.getByText(label, { exact: true });
-  for (const group of ['Příběh', 'Svět hry', 'Tisk']) {
+  for (const group of ['Příběh', 'Svět hry', 'Tisk', 'Organizace']) {
     if (await item.isVisible()) break;
     const header = nav.getByText(group, { exact: true });
     if (!(await header.isVisible())) continue;

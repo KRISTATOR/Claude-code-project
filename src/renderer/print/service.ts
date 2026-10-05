@@ -29,14 +29,12 @@ export function fileName(title: string, extension: string): string {
 export async function save(
   bytes: Uint8Array,
   title: string,
-  kind: 'pdf' | 'docx',
+  kind: 'pdf' | 'docx' | 'xlsx',
 ): Promise<boolean> {
+  const filters = { pdf: 'PDF', docx: 'Word', xlsx: 'Excel' } as const;
   const result = await window.zazemi.dialogs.saveFile({
     defaultName: fileName(title, kind),
-    filters:
-      kind === 'pdf'
-        ? [{ name: 'PDF', extensions: ['pdf'] }]
-        : [{ name: 'Word', extensions: ['docx'] }],
+    filters: [{ name: filters[kind], extensions: [kind] }],
     data: bytes,
   });
   return result.saved;

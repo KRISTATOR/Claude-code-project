@@ -84,6 +84,20 @@ export function recordLink(
       return '/cesty';
     case 'sleeping_plan':
       return '/spani';
+    case 'ingredient':
+    case 'dish':
+    case 'meal':
+      return '/jidlo';
+    case 'budget_line':
+      return '/rozpocet';
+    case 'equipment_list':
+      return '/vybaveni';
+    case 'task':
+      return '/ukolnicek';
+    case 'note':
+      return `/poznamky/${record.id}`;
+    case 'survey':
+      return `/zpetna-vazba/${record.id}`;
     case 'rulebook':
     case 'rule_section':
     case 'glossary_term':

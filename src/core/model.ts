@@ -179,7 +179,13 @@ export function isLockFresh(lock: Pick<FileLockRow, 'heartbeat_at'>, now: number
   return now - new Date(lock.heartbeat_at).getTime() < LOCK_TTL_MS;
 }
 
-export const registrationStatuses = ['applied', 'confirmed', 'paid', 'assigned', 'cancelled'] as const;
+export const registrationStatuses = [
+  'applied',
+  'confirmed',
+  'paid',
+  'assigned',
+  'cancelled',
+] as const;
 export type RegistrationStatus = (typeof registrationStatuses)[number];
 
 /**

@@ -7,8 +7,10 @@ import {
   recordPersonRow,
   recordRow,
   recordSecretRow,
+  registrationRow,
   type MemberRole,
   type RecordRow,
+  type RegistrationRow,
   type Visibility,
 } from '@core/model';
 import type { CloneResult } from '@core/lore/clone';
@@ -362,7 +364,95 @@ export class Repo {
         message: error instanceof Error ? error.message : 'edge function failed',
       });
   }
+
+  // --- Registrations (personal data, M6) ------------------------------------
+
+  async createRegistrations(rows: NewRegistration[]): Promise<void> {
+    if (rows.length === 0) return;
+    const data = await call(
+      this.client
+        .from('registrations')
+        .insert(rows.map((row) => ({ ...row, team_id: this.teamId })))
+        .select(),
+    );
+    await this.cache.registrations.bulkPut(z.array(registrationRow).parse(data));
+  }
+
+  /** Same optimistic concurrency as records: fails with "conflict" if someone was faster. */
+  async updateRegistration(
+    id: string,
+    expectedRev: number,
+    patch: RegistrationPatch,
+  ): Promise<RegistrationRow> {
+    const rows = z
+      .array(registrationRow)
+      .parse(
+        await call(
+          this.client
+            .from('registrations')
+            .update(patch)
+            .eq('id', id)
+            .eq('rev', expectedRev)
+            .select(),
+        ),
+      );
+    const row = rows[0];
+    if (!row) {
+      const fresh = z
+        .array(registrationRow)
+        .parse(await call(this.client.from('registrations').select().eq('id', id)))[0];
+      if (fresh) await this.cache.registrations.put(fresh);
+      else await this.cache.registrations.delete(id);
+      throw new RemoteError('conflict', 'registration changed meanwhile');
+    }
+    await this.cache.registrations.put(row);
+    return row;
+  }
+
+  /** Hard delete: personal data is never kept in the trash. */
+  async deleteRegistrations(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await call(this.client.from('registrations').delete().in('id', ids));
+    await this.cache.registrations.bulkDelete(ids);
+  }
+
+  /** What a player or NPC actor may change on their own registration. */
+  async updateMyRegistration(
+    id: string,
+    fields: Pick<RegistrationRow, 'allergens' | 'allergies' | 'emergency_contact'>,
+  ): Promise<void> {
+    await call(
+      this.client.rpc('update_my_registration', {
+        p_registration: id,
+        p_allergens: fields.allergens,
+        p_allergies: fields.allergies,
+        p_emergency_contact: fields.emergency_contact,
+      }),
+    );
+    const fresh = z
+      .array(registrationRow)
+      .parse(await call(this.client.from('registrations').select().eq('id', id)))[0];
+    if (fresh) await this.cache.registrations.put(fresh);
+  }
 }
+
+export type RegistrationPatch = Partial<
+  Pick<
+    RegistrationRow,
+    | 'name'
+    | 'person_id'
+    | 'character_id'
+    | 'status'
+    | 'is_minor'
+    | 'consent_on_file'
+    | 'allergens'
+    | 'allergies'
+    | 'emergency_contact'
+    | 'note'
+  >
+>;
+
+export type NewRegistration = RegistrationPatch & { game_id: string; name: string };
 
 /** Team-independent server calls used before a team is chosen. */
 export async function createTeam(

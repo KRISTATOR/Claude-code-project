@@ -15,6 +15,15 @@ import {
 } from '@mantine/core';
 import { spotlight } from '@mantine/spotlight';
 import {
+  IconBackpack,
+  IconBriefcase,
+  IconChecklist,
+  IconClipboardCheck,
+  IconCoin,
+  IconId,
+  IconMessageCircle,
+  IconNotes,
+  IconToolsKitchen2,
   IconBed,
   IconBox,
   IconFlask,
@@ -97,6 +106,14 @@ import { RulesPage } from '../lore/RulesPage';
 import { RunOfShowPage } from '../lore/RunOfShowPage';
 import { WikiPage } from '../lore/WikiPage';
 import { HomePage } from './pages/HomePage';
+import { BudgetPage } from '../logistics/BudgetPage';
+import { EquipmentPage } from '../logistics/EquipmentPage';
+import { FeedbackPage } from '../logistics/FeedbackPage';
+import { FoodPage } from '../logistics/FoodPage';
+import { MyRegistrationPage } from '../logistics/MyRegistrationPage';
+import { NotesPage } from '../logistics/NotesPage';
+import { RegistrationsPage } from '../logistics/RegistrationsPage';
+import { TasksPage } from '../logistics/TasksPage';
 import { PeoplePage } from './pages/PeoplePage';
 import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -110,6 +127,8 @@ interface NavItem extends PaletteItem {
   organizerOnly?: boolean;
   /** NPC pages: for organizers and NPC actors, not players. */
   notForPlayers?: boolean;
+  /** Pages about one's own participation ("Moje přihláška"). */
+  notForOrganizers?: boolean;
 }
 
 export function Shell() {
@@ -222,6 +241,41 @@ export function Shell() {
       organizerOnly: true,
     },
   ];
+  const logistics: NavItem[] = [
+    {
+      to: '/moje-prihlaska',
+      label: t('nav.myRegistration'),
+      icon: <IconId size={18} />,
+      notForOrganizers: true,
+    },
+    {
+      to: '/prihlasky',
+      label: t('nav.registrations'),
+      icon: <IconClipboardCheck size={18} />,
+      organizerOnly: true,
+    },
+    {
+      to: '/jidlo',
+      label: t('nav.food'),
+      icon: <IconToolsKitchen2 size={18} />,
+      organizerOnly: true,
+    },
+    { to: '/rozpocet', label: t('nav.budget'), icon: <IconCoin size={18} />, organizerOnly: true },
+    { to: '/vybaveni', label: t('nav.equipment'), icon: <IconBackpack size={18} /> },
+    {
+      to: '/ukolnicek',
+      label: t('nav.tasks'),
+      icon: <IconChecklist size={18} />,
+      organizerOnly: true,
+    },
+    { to: '/poznamky', label: t('nav.notes'), icon: <IconNotes size={18} />, organizerOnly: true },
+    {
+      to: '/zpetna-vazba',
+      label: t('nav.feedback'),
+      icon: <IconMessageCircle size={18} />,
+      organizerOnly: true,
+    },
+  ];
   const teamItems: NavItem[] = [
     { to: '/lide', label: t('nav.people'), icon: <IconUsers size={18} />, organizerOnly: true },
     { to: '/sklad', label: t('nav.inventory'), icon: <IconBox size={18} />, organizerOnly: true },
@@ -230,7 +284,10 @@ export function Shell() {
   ];
   const allowed = (items: NavItem[]) =>
     items.filter(
-      (item) => (!item.organizerOnly || isOrganizer) && (!item.notForPlayers || role !== 'player'),
+      (item) =>
+        (!item.organizerOnly || isOrganizer) &&
+        (!item.notForPlayers || role !== 'player') &&
+        (!item.notForOrganizers || role !== 'organizer'),
     );
   const link = (item: NavItem) => (
     <NavLink
@@ -325,6 +382,16 @@ export function Shell() {
                 {allowed(printing).map(link)}
               </NavLink>
             )}
+            <NavLink
+              label={t('nav.logistics')}
+              leftSection={<IconBriefcase size={18} />}
+              py={6}
+              defaultOpened={logistics.some((item) => location.pathname.startsWith(item.to))}
+              childrenOffset={12}
+              data-testid="nav-logistics"
+            >
+              {allowed(logistics).map(link)}
+            </NavLink>
             <Divider my={4} />
             {allowed(teamItems).map(link)}
           </Stack>
@@ -396,6 +463,16 @@ export function Shell() {
           <Route path="/cesty" element={<TravelPage />} />
           <Route path="/spani" element={<SleepingPage />} />
           <Route path="/sklad" element={<InventoryPage />} />
+          <Route path="/prihlasky" element={<RegistrationsPage />} />
+          <Route path="/moje-prihlaska" element={<MyRegistrationPage />} />
+          <Route path="/jidlo" element={<FoodPage />} />
+          <Route path="/rozpocet" element={<BudgetPage />} />
+          <Route path="/vybaveni" element={<EquipmentPage />} />
+          <Route path="/ukolnicek" element={<TasksPage />} />
+          <Route path="/poznamky" element={<NotesPage />} />
+          <Route path="/poznamky/:id" element={<NotesPage />} />
+          <Route path="/zpetna-vazba" element={<FeedbackPage />} />
+          <Route path="/zpetna-vazba/:id" element={<FeedbackPage />} />
           <Route path="/lide" element={<PeoplePage />} />
           <Route path="/kos" element={<TrashPage />} />
           <Route path="/nastaveni" element={<SettingsPage />} />

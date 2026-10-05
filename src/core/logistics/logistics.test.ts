@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { RecordRow, RegistrationRow } from '../model';
 import { budgetSummary, budgetXlsx, type BudgetSheetLabels } from './budget';
 import { csvTable, detectDelimiter, parseCsv } from './csv';
-import { convertUnit, dishProfile, mealFlags, shoppingList, sortMeals } from './food';
+import { convertUnit, dishProfile, mealFlags, shoppingList, shoppingXlsx, sortMeals } from './food';
 import { allergensFrom, guessMapping, importRegistrations, minorFrom } from './registrations';
 import { identifyingColumns, summarizeQuestion, surveyData } from './survey';
 import { isOverdue, sortTasks } from './tasks';
@@ -135,7 +135,7 @@ describe('food', () => {
     expect(convertUnit(2, 'lžíce', 'kg')).toBeNull();
   });
 
-  it('builds a shopping list for a headcount, grouped by shop', () => {
+  it('builds a shopping list for a headcount, grouped by shop', async () => {
     const breakfast = rec('meal', 'Snídaně', {
       day: 1,
       slot: 'breakfast',
@@ -177,6 +177,24 @@ describe('food', () => {
     expect(list.total).toBe(850);
     expect(list.perHead).toBe(21.25);
     expect(list.problems).toEqual([{ dish_id: odd.id, ingredient_id: flour.id, unit: 'lžíce' }]);
+    const bytes = await shoppingXlsx(list, {
+      sheet: 'Nákup',
+      shop: 'Obchod',
+      noShop: 'Neurčeno',
+      item: 'Surovina',
+      need: 'Potřeba',
+      buy: 'Koupit',
+      unit: 'Jednotka',
+      packs: 'Balení',
+      cost: 'Cena',
+      total: 'Celkem',
+      perHead: 'Na osobu',
+    });
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(bytes.buffer as ArrayBuffer);
+    const rows: string[] = [];
+    workbook.getWorksheet('Nákup')?.eachRow((row) => rows.push(row.getCell(2).text));
+    expect(rows).toContain('Brambory');
     expect(list.meals.find((meal) => meal.meal_id === npcSnack.id)).toMatchObject({
       heads: 5,
       cost: 35,
