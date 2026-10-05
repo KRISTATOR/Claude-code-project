@@ -5,9 +5,10 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { kinds } from '@core/kinds';
-import { scopeKey, scopeOf } from '@core/files/tree';
 import type { RecordRow } from '@core/model';
 import { SearchIndex, type SearchDoc } from '@core/search';
+import { useTeamRecords } from '../../data/hooks';
+import { recordLink } from '../links';
 import { fileIcon } from '../../drive/DrivePage';
 import { useTeam, useWorkspace } from '../workspace';
 
@@ -25,37 +26,24 @@ export function useSearchIndex():
   { index: SearchIndex; records: Map<string, RecordRow> } | undefined {
   const { cache } = useWorkspace();
   const { team } = useTeam();
-  const data = useLiveQuery(async () => {
-    const records = (await cache.records.where('team_id').equals(team.id).toArray()).filter(
-      (row) => row.deleted_at === null,
-    );
-    const texts = await cache.fileText.where('team_id').equals(team.id).toArray();
-    return { records, texts };
-  }, [cache, team.id]);
+  const records = useTeamRecords(() => true, 'all');
+  const texts = useLiveQuery(
+    () => cache.fileText.where('team_id').equals(team.id).toArray(),
+    [cache, team.id],
+  );
   return useMemo(() => {
-    if (!data) return undefined;
-    const textByFile = new Map(data.texts.map((row) => [row.file_id, row.text]));
+    if (!records || !texts) return undefined;
+    const textByFile = new Map(texts.map((row) => [row.file_id, row.text]));
     const index = new SearchIndex();
-    const docs: SearchDoc[] = data.records.map((record) => ({
+    const docs: SearchDoc[] = records.map((record) => ({
       id: record.id,
       kind: record.kind,
       title: record.title,
       body: bodyOf(record, textByFile.get(record.id)),
     }));
     index.addAll(docs);
-    return { index, records: new Map(data.records.map((record) => [record.id, record])) };
-  }, [data]);
-}
-
-export function recordLink(record: RecordRow): string {
-  if (record.kind === 'world' || record.kind === 'game') return `/svety/${record.id}`;
-  if (record.kind === 'file' || record.kind === 'folder') {
-    const params = new URLSearchParams({ s: scopeKey(scopeOf(record)) });
-    if (record.parent_id) params.set('f', record.parent_id);
-    params.set('sel', record.id);
-    return `/disk?${params.toString()}`;
-  }
-  return '/';
+    return { index, records: new Map(records.map((record) => [record.id, record])) };
+  }, [records, texts]);
 }
 
 export function SearchPage() {

@@ -48,8 +48,8 @@ import {
 } from '@core/files/tree';
 import { fileKind, readData } from '@core/kinds';
 import { isLockFresh, type FileLockRow, type RecordRow } from '@core/model';
-import { compareCzech } from '@core/text';
 import { useTeam, useWorkspace } from '../app/workspace';
+import { useTeamRecords } from '../data/hooks';
 import { errorMessage } from '../components/errors';
 import { notifyError } from '../components/notify';
 import { VisibilityBadge } from '../components/VisibilityEditor';
@@ -77,15 +77,7 @@ export function fileIcon(record: Pick<RecordRow, 'kind' | 'title'>, size = 18) {
 }
 
 export function useDriveItems() {
-  const { cache } = useWorkspace();
-  const { team } = useTeam();
-  return useLiveQuery(
-    async () =>
-      (await cache.records.where('team_id').equals(team.id).toArray()).filter(
-        (row) => (row.kind === 'file' || row.kind === 'folder') && row.deleted_at === null,
-      ),
-    [cache, team.id],
-  );
+  return useTeamRecords((row) => row.kind === 'file' || row.kind === 'folder', 'drive');
 }
 
 export function useLocks(): Map<string, FileLockRow> {
@@ -165,14 +157,9 @@ function ScopeNav({
   onSelect: (scope: string) => void;
 }) {
   const { t } = useTranslation();
-  const { cache } = useWorkspace();
-  const { team } = useTeam();
-  const containers = useLiveQuery(
-    async () =>
-      (await cache.records.where('team_id').equals(team.id).toArray())
-        .filter((row) => (row.kind === 'world' || row.kind === 'game') && row.deleted_at === null)
-        .sort((a, b) => compareCzech(a.title, b.title)),
-    [cache, team.id],
+  const containers = useTeamRecords(
+    (row) => row.kind === 'world' || row.kind === 'game',
+    'containers',
   );
   const worlds = (containers ?? []).filter((row) => row.kind === 'world');
   const games = (containers ?? []).filter((row) => row.kind === 'game');

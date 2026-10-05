@@ -1,10 +1,10 @@
-import { Alert, Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
+import { Alert, Anchor, Badge, Card, Group, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { gameKind, readData } from '@core/kinds';
 import { formatDate } from '@core/format';
-import { useRecords } from '../../data/hooks';
+import { gameKind, npcKind, readData } from '@core/kinds';
+import { useAttachments, useRecords } from '../../data/hooks';
 import { useTeam, useWorkspace } from '../workspace';
 
 export function HomePage() {
@@ -12,16 +12,48 @@ export function HomePage() {
   const { team, role, me, isOrganizer } = useTeam();
   const { cache } = useWorkspace();
   const games = useRecords('game') ?? [];
+  const characters = useRecords('character') ?? [];
+  const npcs = useRecords('npc') ?? [];
+  const attachments = useAttachments() ?? [];
   const person = useLiveQuery(() => cache.people.get(me.person_id), [cache, me.person_id]);
+  const mine = (relation: 'player' | 'actor') =>
+    new Set(
+      attachments
+        .filter((row) => row.person_id === me.person_id && row.relation === relation)
+        .map((row) => row.record_id),
+    );
+  const myCharacters = characters.filter((row) => mine('player').has(row.id));
+  const myNpcs = npcs.filter((row) => mine('actor').has(row.id));
 
   return (
     <Stack>
-      <Title order={2}>{t('home.greeting', { name: person?.display_name ?? '' })}</Title>
+      {person && <Title order={2}>{t('home.greeting', { name: person.display_name })}</Title>}
       <Text>{t('home.role', { team: team.name, role: t(`roles.${role}`) })}</Text>
       {isOrganizer && (
         <Alert variant="light" color="teal">
           {t('home.organizerTips')}
         </Alert>
+      )}
+      {myCharacters.length > 0 && (
+        <Stack gap="xs" data-testid="my-characters">
+          <Title order={4}>{t('characters.myCharacters')}</Title>
+          {myCharacters.map((row) => (
+            <Anchor key={row.id} component={Link} to={`/postavy/${row.id}`}>
+              {row.title}
+            </Anchor>
+          ))}
+        </Stack>
+      )}
+      {myNpcs.length > 0 && (
+        <Stack gap="xs" data-testid="my-npcs">
+          <Title order={4}>{t('npcs.myNpcs')}</Title>
+          {myNpcs.map((row) => (
+            <Anchor key={row.id} component={Link} to={`/cp/${row.id}`}>
+              {row.title}
+              {readData(npcKind, row).rank ? ` (${readData(npcKind, row).rank})` : ''}
+            </Anchor>
+          ))}
+        </Stack>
       )}
       <Title order={4}>{t('home.games')}</Title>
       {games.length === 0 ? (

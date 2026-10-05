@@ -26,6 +26,7 @@ import { memberRoles, type MemberRole } from '@core/model';
 import { errorMessage } from '../../components/errors';
 import { notifyError, notifySuccess } from '../../components/notify';
 import { useInvites, useMembers, usePeople } from '../../data/hooks';
+import { usePreviewControls } from '../preview-controls';
 import { useTeam, useWorkspace } from '../workspace';
 
 export function PeoplePage() {
@@ -194,6 +195,7 @@ function Roster() {
   const { t } = useTranslation();
   const { repo, canEdit } = useTeam();
   const people = usePeople() ?? [];
+  const preview = usePreviewControls();
   const [name, setName] = useState('');
   const run = useRun();
 
@@ -227,6 +229,7 @@ function Roster() {
           <Table.Tr>
             <Table.Th>{t('people.name')}</Table.Th>
             <Table.Th>{t('people.account')}</Table.Th>
+            <Table.Th />
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
@@ -237,6 +240,13 @@ function Roster() {
                 <Badge variant="light" color={person.user_id ? 'teal' : 'gray'}>
                   {person.user_id ? t('people.hasAccount') : t('people.noAccount')}
                 </Badge>
+              </Table.Td>
+              <Table.Td>
+                {preview && (
+                  <Button size="xs" variant="subtle" onClick={() => void preview.start(person.id)}>
+                    {t('preview.start')}
+                  </Button>
+                )}
               </Table.Td>
             </Table.Tr>
           ))}

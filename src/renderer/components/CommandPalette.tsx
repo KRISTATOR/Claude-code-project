@@ -1,77 +1,57 @@
 import { Spotlight, type SpotlightActionData } from '@mantine/spotlight';
-import { IconHome, IconMap2, IconSearch, IconSettings, IconUsers } from '@tabler/icons-react';
-import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
+import { IconSearch } from '@tabler/icons-react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { matchesQuery } from '@core/text';
-import { useTeam, useWorkspace } from '../app/workspace';
+import { recordLink } from '../app/links';
+import { useTeamRecords } from '../data/hooks';
 
-/** Ctrl+K: jump to pages and records. Search grows into full text in M3. */
-export function CommandPalette() {
+export interface PaletteItem {
+  to: string;
+  label: string;
+  icon: ReactNode;
+}
+
+const RECORD_KINDS = new Set([
+  'world',
+  'game',
+  'character',
+  'npc',
+  'faction',
+  'definition',
+  'file',
+  'folder',
+  'phase',
+]);
+
+/** Ctrl+K: jump to pages and records (what you can see). */
+export function CommandPalette({ pages }: { pages: PaletteItem[] }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { cache } = useWorkspace();
-  const { team, isOrganizer } = useTeam();
   const [query, setQuery] = useState('');
-
-  const records = useLiveQuery(
-    async () =>
-      (await cache.records.where('team_id').equals(team.id).toArray()).filter(
-        (r) => r.deleted_at === null,
-      ),
-    [cache, team.id],
-  );
+  const records = useTeamRecords((row) => RECORD_KINDS.has(row.kind), 'palette');
 
   const actions = useMemo<SpotlightActionData[]>(() => {
-    const pages: SpotlightActionData[] = [
-      {
-        id: 'p-home',
-        label: t('nav.home'),
-        group: t('palette.pages'),
-        leftSection: <IconHome size={16} />,
-        onClick: () => void navigate('/'),
-      },
-      {
-        id: 'p-worlds',
-        label: t('nav.worlds'),
-        group: t('palette.pages'),
-        leftSection: <IconMap2 size={16} />,
-        onClick: () => void navigate('/svety'),
-      },
-      ...(isOrganizer
-        ? [
-            {
-              id: 'p-people',
-              label: t('nav.people'),
-              group: t('palette.pages'),
-              leftSection: <IconUsers size={16} />,
-              onClick: () => void navigate('/lide'),
-            },
-          ]
-        : []),
-      {
-        id: 'p-settings',
-        label: t('nav.settings'),
-        group: t('palette.pages'),
-        leftSection: <IconSettings size={16} />,
-        onClick: () => void navigate('/nastaveni'),
-      },
-    ];
-    const recordActions: SpotlightActionData[] = (records ?? [])
-      .filter((record) => record.kind === 'world' || record.kind === 'game')
-      .map((record) => ({
-        id: record.id,
-        label: record.title,
-        description: record.kind === 'world' ? t('worlds.world') : t('worlds.game'),
-        group: t('nav.worlds'),
-        onClick: () => void navigate(`/svety/${record.id}`),
-      }));
-    const all = [...pages, ...recordActions];
+    const pageActions: SpotlightActionData[] = pages.map((page) => ({
+      id: `page:${page.to}`,
+      label: page.label,
+      group: t('palette.pages'),
+      leftSection: page.icon,
+      onClick: () => void navigate(page.to),
+    }));
+    const recordActions: SpotlightActionData[] = (records ?? []).map((record) => ({
+      id: record.id,
+      label: record.title,
+      description: t(`kinds.${record.kind}`, { defaultValue: record.kind }),
+      group: t('palette.records'),
+      onClick: () => void navigate(recordLink(record)),
+    }));
+    const all = [...pageActions, ...recordActions];
     return query.trim()
-      ? all.filter((action) => matchesQuery(action.label ?? '', query))
-      : all.slice(0, 30);
-  }, [records, query, t, navigate, isOrganizer]);
+      ? all.filter((action) => matchesQuery(action.label ?? '', query)).slice(0, 50)
+      : pageActions;
+  }, [records, query, t, navigate, pages]);
 
   return (
     <Spotlight

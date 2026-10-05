@@ -111,14 +111,14 @@ test('the player joins and sees only what is public', async () => {
 
 test('a game becomes visible to the player once the organizer shares it', async () => {
   await organizer.page.getByRole('navigation').getByText('Světy a hry', { exact: true }).click();
-  await organizer.page.getByText('Pevnost na hranici').click();
+  await organizer.page.getByRole('main').getByText('Pevnost na hranici').click();
   const editor = organizer.page.getByTestId('visibility-editor');
   await editor.getByText('Všichni v týmu').click();
   await editor.getByRole('button', { name: 'Uložit viditelnost' }).click();
   await expect(organizer.page.getByTestId('readers-panel')).toContainText('Hana Hráčka');
 
   await syncNow(player.page);
-  await expect(player.page.getByText('Pevnost na hranici')).toBeVisible();
+  await expect(player.page.getByRole('main').getByText('Pevnost na hranici')).toBeVisible();
 });
 
 test('hiding the game again removes it from the player’s computer', async () => {
@@ -128,7 +128,7 @@ test('hiding the game again removes it from the player’s computer', async () =
   await expect(organizer.page.getByTestId('readers-panel')).not.toContainText('Hana Hráčka');
 
   await syncNow(player.page);
-  await expect(player.page.getByText('Pevnost na hranici')).toHaveCount(0);
+  await expect(player.page.getByRole('main').getByText('Pevnost na hranici')).toHaveCount(0);
 });
 
 test('offline, the app shows cached data read-only', async () => {

@@ -1,6 +1,6 @@
 import { AppShell, Button, Center, Group, Loader, Modal, Stack, Text, Title } from '@mantine/core';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HashRouter } from 'react-router';
 import type { AppInfo, ConnectionConfig } from '@shared/api';
@@ -8,12 +8,15 @@ import { errorMessage } from '../components/errors';
 import { notifyError } from '../components/notify';
 import { ThemeSwitch } from '../components/ThemeSwitch';
 import { UpdateBanner } from '../components/UpdateBanner';
-import { joinTeam } from '../data/repo';
+import { CurrentGameProvider } from '../data/hooks';
+import { joinTeam, Repo } from '../data/repo';
 import { DriveProvider } from '../drive/context';
 import { AuthScreen } from './AuthScreen';
 import { BackendProvider, useBackend } from './backend';
 import { FirstRunScreen } from './FirstRunScreen';
 import { OnboardingScreen } from './OnboardingScreen';
+import { PreviewProvider, type Preview } from './preview';
+import { PreviewControlsContext, type PreviewControls } from './preview-controls';
 import { SessionProvider, useSession } from './session';
 import { Shell } from './Shell';
 import { TeamProvider, useWorkspace, WorkspaceProvider } from './workspace';
@@ -122,6 +125,7 @@ function TeamGate() {
   const { cache, user, teams, teamId, refresh, setTeamId, engine } = useWorkspace();
   const [pendingInvite, setPendingInvite] = useState<string | null>(null);
   const [firstSyncDone, setFirstSyncDone] = useState(false);
+  const [preview, setPreview] = useState<Preview | null>(null);
 
   const me = useLiveQuery(
     async () => (teamId ? cache.members.get([teamId, user.id]) : undefined),
@@ -141,6 +145,38 @@ function TeamGate() {
     return window.zazemi.deepLinks.onInvite(setPendingInvite);
   }, []);
 
+  const previewRepo = useMemo(
+    () => (team ? new Repo(client, cache, team.id) : null),
+    [client, cache, team],
+  );
+  const controls = useMemo<PreviewControls | null>(
+    () =>
+      me?.role === 'organizer' && previewRepo
+        ? {
+            start: async (personId: string, path = '/') => {
+              try {
+                const ids = await previewRepo.visibleRecordIds(personId);
+                const person = await cache.people.get(personId);
+                const member = (
+                  await cache.members.where('person_id').equals(personId).toArray()
+                )[0];
+                setPreview({
+                  personId,
+                  name: person?.display_name ?? '?',
+                  role: member?.role ?? 'player',
+                  visibleIds: new Set(ids),
+                });
+                window.location.hash = `#${path}`;
+              } catch (error) {
+                notifyError(errorMessage(t, error));
+              }
+            },
+            stop: () => setPreview(null),
+          }
+        : null,
+    [me?.role, previewRepo, cache, t],
+  );
+
   if (teams === undefined || (!firstSyncDone && teams.length === 0)) return <Splash />;
   if (!team || !me) {
     return (
@@ -149,13 +185,21 @@ function TeamGate() {
       </Bare>
     );
   }
+  // In "view as player" the whole UI runs with the previewed person's role.
+  const effectiveMe = preview ? { ...me, role: preview.role, person_id: preview.personId } : me;
   return (
-    <TeamProvider team={team} me={me}>
-      <DriveProvider>
-        <HashRouter>
-          <Shell />
-        </HashRouter>
-      </DriveProvider>
+    <TeamProvider team={team} me={effectiveMe} readOnly={preview !== null}>
+      <PreviewProvider preview={preview}>
+        <PreviewControlsContext.Provider value={controls}>
+          <CurrentGameProvider>
+            <DriveProvider>
+              <HashRouter>
+                <Shell />
+              </HashRouter>
+            </DriveProvider>
+          </CurrentGameProvider>
+        </PreviewControlsContext.Provider>
+      </PreviewProvider>
       {pendingInvite && (
         <InvitePrompt
           code={pendingInvite}

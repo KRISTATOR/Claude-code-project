@@ -206,10 +206,13 @@ const TeamContext = createContext<TeamContextValue | null>(null);
 export function TeamProvider({
   team,
   me,
+  readOnly = false,
   children,
 }: {
   team: TeamRow;
   me: MemberRow;
+  /** "View as player": nothing can be edited. */
+  readOnly?: boolean;
   children: ReactNode;
 }) {
   const { client } = useBackend();
@@ -224,9 +227,9 @@ export function TeamProvider({
       role: me.role,
       repo,
       isOrganizer: me.role === 'organizer',
-      canEdit: me.role === 'organizer' && reachable,
+      canEdit: me.role === 'organizer' && reachable && !readOnly,
     }),
-    [team, me, repo, reachable],
+    [team, me, repo, reachable, readOnly],
   );
   return <TeamContext.Provider value={value}>{children}</TeamContext.Provider>;
 }

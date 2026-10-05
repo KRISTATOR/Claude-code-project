@@ -4,7 +4,9 @@ import {
   memberRoles,
   personRow,
   recordAccessRow,
+  recordPersonRow,
   recordRow,
+  recordSecretRow,
   type MemberRole,
   type RecordRow,
   type Visibility,
@@ -157,6 +159,66 @@ export class Repo {
       await this.cache.access.where('record_id').equals(record.id).delete();
       await this.cache.access.bulkPut(access);
     });
+  }
+
+  /** Replaces a record's organizer-only part. */
+  async saveSecret(recordId: string, data: Record<string, unknown>): Promise<void> {
+    const row = recordSecretRow.parse(
+      await call(
+        this.client
+          .from('record_secrets')
+          .upsert({ record_id: recordId, team_id: this.teamId, data })
+          .select()
+          .single(),
+      ),
+    );
+    await this.cache.secrets.put(row);
+  }
+
+  /** Attaches a person as player or actor (rule R4). */
+  async attach(recordId: string, personId: string, relation: 'player' | 'actor'): Promise<void> {
+    const row = recordPersonRow.parse(
+      await call(
+        this.client
+          .from('record_people')
+          .upsert({ record_id: recordId, team_id: this.teamId, person_id: personId, relation })
+          .select()
+          .single(),
+      ),
+    );
+    await this.cache.recordPeople.put(row);
+  }
+
+  async detach(recordId: string, personId: string, relation: 'player' | 'actor'): Promise<void> {
+    await call(
+      this.client
+        .from('record_people')
+        .delete()
+        .eq('record_id', recordId)
+        .eq('person_id', personId)
+        .eq('relation', relation),
+    );
+    await this.cache.recordPeople.delete([recordId, personId, relation]);
+  }
+
+  /** Makes exactly `personIds` attached with `relation`. */
+  async setAttached(
+    recordId: string,
+    relation: 'player' | 'actor',
+    personIds: string[],
+  ): Promise<void> {
+    const current = await this.cache.recordPeople.where('record_id').equals(recordId).toArray();
+    const existing = current.filter((row) => row.relation === relation).map((row) => row.person_id);
+    for (const id of existing.filter((id) => !personIds.includes(id)))
+      await this.detach(recordId, id, relation);
+    for (const id of personIds.filter((id) => !existing.includes(id)))
+      await this.attach(recordId, id, relation);
+  }
+
+  /** Hard delete (organizers): used for small records like relationships. */
+  async deleteRecord(recordId: string): Promise<void> {
+    await call(this.client.from('records').delete().eq('id', recordId));
+    await this.cache.records.delete(recordId);
   }
 
   async readers(recordId: string): Promise<Reader[]> {
