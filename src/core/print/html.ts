@@ -93,7 +93,8 @@ const SIZES: Record<PageSize, { css: string; padding: string; minHeight: string 
   A4: { css: 'A4', padding: '20mm', minHeight: '297mm' },
   A5: { css: 'A5', padding: '14mm', minHeight: '210mm' },
   'A4-landscape': { css: 'A4 landscape', padding: '14mm', minHeight: '210mm' },
-  'A6-landscape': { css: 'A6 landscape', padding: '8mm', minHeight: '105mm' },
+  // Chromium knows no "A6" keyword; explicit millimetres work everywhere.
+  'A6-landscape': { css: '148mm 105mm', padding: '8mm', minHeight: '105mm' },
 };
 
 const PAPER: Record<PaperStyle, string> = {
@@ -150,7 +151,7 @@ export function printHtml(
     const style = [
       `page:${pageName}`,
       `padding:0 ${size.padding}`,
-      `font-family:"${font.family}",serif`,
+      `font-family:'${font.family}',serif`,
       `color:${piece.look.ink}`,
       `font-size:${piece.look.sizePt}pt`,
     ].join(';');

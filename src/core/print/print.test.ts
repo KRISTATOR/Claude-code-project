@@ -303,3 +303,18 @@ describe('Word output', () => {
     expect(xml.match(/<w:sectPr/g)).toHaveLength(2);
   });
 });
+
+describe('print HTML attributes', () => {
+  it('keeps the inline style intact (no double quotes inside the attribute)', () => {
+    const html = printHtml([
+      {
+        size: 'A4',
+        look: { fontId: 'grenze-gotisch', ink: '#000000', paper: 'plain', sizePt: 14 },
+        html: '',
+      },
+    ]);
+    const style = /<section class="piece [^"]*" style="([^"]*)"/.exec(html)?.[1] ?? '';
+    expect(style).toContain("font-family:'Zazemi Grenze Gotisch',serif");
+    expect(style).toContain('font-size:14pt');
+  });
+});
