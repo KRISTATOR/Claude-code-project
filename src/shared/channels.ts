@@ -34,4 +34,6 @@ export const IPC = {
   backupAdd: 'backup:add',
   backupFinish: 'backup:finish',
   backupAbort: 'backup:abort',
+  printPdf: 'print:pdf',
+  fontsExport: 'fonts:export',
 } as const;

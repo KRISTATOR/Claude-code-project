@@ -50,6 +50,12 @@ export interface SaveFileRequest {
 
 export type SaveFileResult = { saved: true; path: string } | { saved: false };
 
+export interface PrintRequest {
+  html: string;
+  pageSize: 'A4' | 'A5' | 'A3';
+  landscape: boolean;
+}
+
 /** The whole surface the renderer can reach: `window.zazemi`. Keep it narrow. */
 export interface ZazemiApi {
   app: {
@@ -77,6 +83,12 @@ export interface ZazemiApi {
   };
   dialogs: {
     saveFile(request: SaveFileRequest): Promise<SaveFileResult>;
+  };
+  /** Print to PDF in a hidden, script-less window (docs/PLAN.md §2.9). */
+  print: {
+    toPdf(request: PrintRequest): Promise<Uint8Array>;
+    /** Copies the bundled fonts and their licences into a folder the user picks. */
+    exportFonts(): Promise<SaveFileResult>;
   };
   /** Downloaded file versions, stored by their SHA-256 (docs/PLAN.md §2.3). */
   blobs: {

@@ -1,4 +1,5 @@
-import { writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { hostname } from 'node:os';
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import type { AppInfo, ConfigSetResult, SaveFileResult } from '@shared/api';
@@ -10,6 +11,7 @@ import {
   openEditInput,
   openExternalInput,
   openViewInput,
+  printInput,
   saveFileInput,
   secureKeyInput,
   secureValueInput,
@@ -29,6 +31,7 @@ import {
 } from './office';
 import { buildTimeConfig, clearConfig, loadConfig, saveConfig } from './config';
 import { takePendingInvite } from './deep-links';
+import { fontsRoot, renderPdf } from './print';
 import { secureGet, secureRemove, secureSet } from './secure-store';
 import { checkForUpdates, getUpdateStatus, installUpdateNow } from './updater';
 
@@ -86,6 +89,13 @@ export function registerIpcHandlers(onConfigChanged: () => void): void {
   ipcMain.handle(IPC.saveFile, async (event, input: unknown): Promise<SaveFileResult> => {
     const parsed = saveFileInput.safeParse(input);
     if (!parsed.success) return { saved: false };
+    // End-to-end tests save into a known folder instead of answering a dialog.
+    const testDir = __ZAZEMI_TEST_BUILD__ ? process.env['ZAZEMI_SAVE_DIR'] : undefined;
+    if (testDir) {
+      const path = join(testDir, parsed.data.defaultName);
+      await writeFile(path, parsed.data.data);
+      return { saved: true, path };
+    }
     const window = BrowserWindow.fromWebContents(event.sender);
     const options = {
       defaultPath: parsed.data.defaultName,
@@ -100,6 +110,28 @@ export function registerIpcHandlers(onConfigChanged: () => void): void {
   });
 
   ipcMain.handle(IPC.takePendingInvite, () => takePendingInvite());
+
+  ipcMain.handle(IPC.printPdf, (_event, input: unknown) => renderPdf(printInput.parse(input)));
+
+  ipcMain.handle(IPC.fontsExport, async (event): Promise<SaveFileResult> => {
+    const testDir = __ZAZEMI_TEST_BUILD__ ? process.env['ZAZEMI_SAVE_DIR'] : undefined;
+    let folder = testDir;
+    if (!folder) {
+      const window = BrowserWindow.fromWebContents(event.sender);
+      const options = { properties: ['openDirectory', 'createDirectory'] as const };
+      const result = window
+        ? await dialog.showOpenDialog(window, { properties: [...options.properties] })
+        : await dialog.showOpenDialog({ properties: [...options.properties] });
+      if (result.canceled || !result.filePaths[0]) return { saved: false };
+      folder = result.filePaths[0];
+    }
+    const target = join(folder, 'Zazemi pisma');
+    await mkdir(target, { recursive: true });
+    for (const name of await readdir(fontsRoot())) {
+      await cp(join(fontsRoot(), name), join(target, name), { recursive: true });
+    }
+    return { saved: true, path: target };
+  });
 
   ipcMain.handle(IPC.blobHas, (_event, sha: unknown) => hasBlob(sha256Input.parse(sha)));
   ipcMain.handle(IPC.blobGet, (_event, sha: unknown) => getBlob(sha256Input.parse(sha)));

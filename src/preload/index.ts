@@ -32,6 +32,10 @@ const api: ZazemiApi = {
   dialogs: {
     saveFile: (request) => ipcRenderer.invoke(IPC.saveFile, request),
   },
+  print: {
+    toPdf: (request) => ipcRenderer.invoke(IPC.printPdf, request),
+    exportFonts: () => ipcRenderer.invoke(IPC.fontsExport),
+  },
   blobs: {
     has: (sha) => ipcRenderer.invoke(IPC.blobHas, sha),
     get: (sha) => ipcRenderer.invoke(IPC.blobGet, sha),

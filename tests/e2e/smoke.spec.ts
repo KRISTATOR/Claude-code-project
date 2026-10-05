@@ -45,6 +45,7 @@ test('renderer is isolated from Node and served with a strict CSP', async () => 
       'deepLinks',
       'dialogs',
       'office',
+      'print',
       'secureStore',
       'shell',
       'updates',
@@ -82,4 +83,20 @@ test('switches between light and dark theme', async () => {
   await expect(html).toHaveAttribute('data-mantine-color-scheme', 'dark');
   await page.getByText('Světlý').click();
   await expect(html).toHaveAttribute('data-mantine-color-scheme', 'light');
+});
+
+test('prints HTML to PDF with the bundled fonts embedded', async () => {
+  const { page } = launched;
+  const pdf = await page.evaluate(async () => {
+    const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+      @font-face{font-family:"T";src:url("app://print/fonts/caveat.ttf") format("truetype")}
+      @page{size:A5;margin:10mm} body{font-family:"T"}</style>
+      <link rel="preload" as="font" href="app://print/fonts/caveat.ttf" crossorigin>
+      </head><body><p>Příliš žluťoučký kůň úpěl ďábelské ódy.</p>
+      <script>document.body.innerHTML = 'SCRIPT RAN'</script></body></html>`;
+    const bytes = await window.zazemi.print.toPdf({ html, pageSize: 'A5', landscape: false });
+    return new TextDecoder('latin1').decode(bytes);
+  });
+  expect(pdf.startsWith('%PDF')).toBe(true);
+  expect(pdf).toMatch(/\/FontName\s*\/[A-Z]{6}\+Caveat/);
 });

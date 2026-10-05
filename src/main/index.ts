@@ -45,12 +45,16 @@ async function start(): Promise<void> {
 
   if (isDev) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      // Print pages carry their own, stricter CSP.
+      if (details.url.startsWith('app://')) return callback({});
       callback({
         responseHeaders: { ...details.responseHeaders, 'Content-Security-Policy': [csp()] },
       });
     });
+    handleAppScheme(null, join(import.meta.dirname, '../../src/renderer/public/fonts'), csp);
   } else {
-    handleAppScheme(join(import.meta.dirname, '../renderer'), csp);
+    const renderer = join(import.meta.dirname, '../renderer');
+    handleAppScheme(renderer, join(renderer, 'fonts'), csp);
   }
 
   registerIpcHandlers(() => {
