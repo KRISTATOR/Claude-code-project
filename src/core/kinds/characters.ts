@@ -167,6 +167,8 @@ export const npcAppearanceKind = defineKind({
     starts_at: z.string().default(''),
     ends_at: z.string().default(''),
     actor_person_id: z.string().nullable().catch(null).default(null),
+    /** Played (set from the live dashboard, M7). */
+    done: z.boolean().catch(false).default(false),
   }),
   secret: emptySecret,
   defaultVisibility: 'organizers',

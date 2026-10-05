@@ -211,3 +211,40 @@ export const registrationRow = z.object({
   updated_at: timestamp,
 });
 export type RegistrationRow = z.infer<typeof registrationRow>;
+
+export const eventKinds = ['note', 'phase', 'block', 'delivered', 'incident'] as const;
+export type EventKind = (typeof eventKinds)[number];
+
+/** One line of the backstage event log (M7). Append-only; ids come from the client. */
+export const eventRow = z.object({
+  id: uuid,
+  team_id: uuid,
+  game_id: uuid,
+  kind: z.enum(eventKinds),
+  text: z.string(),
+  record_id: uuid.nullable(),
+  at: timestamp,
+  author_id: uuid.nullable(),
+  author_person: uuid.nullable(),
+  created_at: timestamp,
+  updated_at: timestamp,
+});
+export type EventRow = z.infer<typeof eventRow>;
+
+/** A tracked value (wounds, drunkenness…) of a character or NPC at a moment (M7). */
+export const readingRow = z.object({
+  id: uuid,
+  team_id: uuid,
+  game_id: uuid,
+  definition_id: uuid,
+  subject_id: uuid,
+  // Postgres numeric arrives as a string from PostgREST in some setups.
+  value: z.coerce.number().nullable(),
+  text: z.string(),
+  at: timestamp,
+  author_id: uuid.nullable(),
+  author_person: uuid.nullable(),
+  created_at: timestamp,
+  updated_at: timestamp,
+});
+export type ReadingRow = z.infer<typeof readingRow>;

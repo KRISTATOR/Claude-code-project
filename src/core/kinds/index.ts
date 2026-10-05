@@ -56,6 +56,7 @@ import {
   surveyKind,
   taskKind,
 } from './logistics';
+import { trackerDefinitionKind } from './live';
 import type { KindDefinition } from './registry';
 import { mapKind, mapLayerKind, sleepingPlanKind, travelRouteKind } from './maps';
 import { worldKind } from './world';
@@ -67,6 +68,7 @@ export * from './documents';
 export * from './economy';
 export * from './maps';
 export * from './logistics';
+export * from './live';
 export { gameStatuses, type GameStatus } from './game';
 export { readData, readSecret, type KindDefinition } from './registry';
 
@@ -124,4 +126,5 @@ export const kinds: Record<string, KindDefinition> = {
   [taskKind.kind]: taskKind,
   [noteKind.kind]: noteKind,
   [surveyKind.kind]: surveyKind,
+  [trackerDefinitionKind.kind]: trackerDefinitionKind,
 };

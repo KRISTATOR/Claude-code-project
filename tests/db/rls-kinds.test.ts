@@ -58,6 +58,8 @@ const gameKinds = [
   'task',
   'note',
   'survey',
+  // M7
+  'tracker_definition',
 ];
 const worldKinds = [
   'definition',

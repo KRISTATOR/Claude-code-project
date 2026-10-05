@@ -96,6 +96,8 @@ export function recordLink(
       return '/ukolnicek';
     case 'note':
       return `/poznamky/${record.id}`;
+    case 'tracker_definition':
+      return '/stav';
     case 'survey':
       return `/zpetna-vazba/${record.id}`;
     case 'rulebook':

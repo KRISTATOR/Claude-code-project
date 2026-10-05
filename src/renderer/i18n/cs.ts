@@ -1651,6 +1651,7 @@ export const cs = {
     task: 'Úkol týmu',
     note: 'Poznámka',
     survey: 'Dotazník',
+    tracker_definition: 'Sledovaná hodnota',
   },
   palette: {
     records: 'Záznamy',
