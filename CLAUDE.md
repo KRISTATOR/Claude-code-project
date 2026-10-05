@@ -167,6 +167,7 @@ Release workflow: `.github/workflows/release.yml`; installer config:
 | 2026-10-05 | One file version per check-out session (Free tier storage). |
 | 2026-10-05 | Milestone 1 split into 1a (accounts, secrecy, sync) and 1b (drive, Office); auto-update in M0; folder import in M1b. |
 | 2026-10-05 | Rich text is TipTap JSON (free core only); `[[links]]` are `wikiLink` nodes, mirrored into `record_links` by a DB trigger. |
+| 2026-10-05 | Printing: HTML built in `src/core/print`, printed by main in a script-less window from `app://print`; pdf-lib for merging and imposition; `docx` for Word. Bundled fonts live in `src/renderer/public/fonts` and must cover every Czech letter. |
 | 2026-10-05 | Owner: continue through milestones without waiting for review once each is tested. Open questions in PLAN §8 run on their defaults. |
 | 2026-10-05 | A record inside a hidden game or world is hidden too (container rule in `can_read_as`). |
 | 2026-10-05 | Sync reads disable postgrest-js retries; the engine re-syncs on a timer and on realtime pokes. |

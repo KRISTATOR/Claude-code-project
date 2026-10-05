@@ -3,6 +3,53 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 0.5.0: Milestone 4, prop documents and printing (2026-10-05)
+
+No database changes.
+
+### Added
+- **Dokumenty:** in-game documents with number (the next one is suggested;
+  duplicates are flagged), type (letter, notice, speech, form, list,
+  newspaper, leaflet, photo caption, sign), phase, writer, in-world author
+  and recipient, the characters whose players get it, delivery method and
+  order, in-world date, A4 or A5, copies, status (draft, final, printed,
+  delivered), the text with [[links]] and organizer-only notes. A live
+  paper preview shows the writer's look.
+- **Pisatelé:** writer profiles per world (font, ink, paper, size,
+  letterhead, signature). Bundled open-licence fonts: handwriting (Caveat,
+  Marck Script), typewriter (Courier Prime, Special Elite), blackletter
+  (Grenze Gotisch) and a book face (EB Garamond). A build test refuses any
+  font that cannot write every Czech letter. "Uložit písma do složky" exports
+  them for installing on computers that open the Word files.
+- **Print and export:** PDF (rendered in a hidden window with scripts off)
+  and Word. Each document starts on its own page, A4 and A5 mixed in one
+  file, with a grey organizer strip (number, phase, for whom, how to
+  deliver) to cut off. Batch export "everything for phase III" or
+  "everything for this player", in delivery order. Print preview inside the
+  app.
+- **Formuláře:** mail-merge forms filled from the roster: one copy per
+  character (a census slip) or a list with chosen columns; fields {jmeno},
+  {hrac}, {funkce}, {dum}, {skupiny}, {rasa}, {dovednosti}, {tym}, {svet},
+  {hra}, {datum}; optionally only some groups.
+- **Cedule:** location signs linked to a wiki place, printed as cards four
+  to an A4 sheet with cut lines, or as A5/A4.
+- **Deník postavy:** a diary booklet per character (front page, chosen sheet
+  sections – never organizer-only ones – lined pages, back page), printed as
+  A5 booklets imposed two per A4 side for double-sided printing.
+- **Archiv:** archives bound from documents, PDFs from the drive and texts,
+  with shelf marks (I/1, IV/7), a generated inventory, page numbers, an
+  organizer guide (page ranges and purpose), and supplements that continue
+  the numbering without renumbering pages already printed.
+- **Tisková fronta:** print jobs with paper, copies, phase and status; a
+  list of finished documents waiting to be printed; "Vytištěno" marks the
+  documents as printed.
+- Player rulebook PDF (chapters, safety, glossary; never the mechanics
+  notes) and quest notices for the job board (A5).
+- Word and Excel templates in the drive can be filled for a chosen
+  character.
+- The consistency checker flags references to numbered documents that do
+  not exist ("viz dopis č. 40").
+
 ## 0.4.0: Milestone 3, lore and time (2026-10-05)
 
 **Database changes: run "Deploy database" (docs/SETUP.md, step 6) before

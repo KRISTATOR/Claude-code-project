@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0, 1a, 1b, 2 and 3 are done; next is M4.**
+Status: **approved 2026-10-05. Milestones 0 to 4 are done; next is M5.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -580,7 +580,7 @@ tests/
   db/              RLS tests (Vitest), run on PGlite locally and on real Supabase in CI
   e2e/             Playwright driving the Electron app
 build/             icon, NSIS assets
-resources/fonts/   bundled OFL fonts and their licenses (M4)
+src/renderer/public/fonts/  bundled OFL/Apache fonts and their licences (M4), served to previews and print
 docs/              PLAN.md, SETUP.md, CHANGELOG.md, later the Czech user guide
 .github/workflows/ ci.yml, release.yml, deploy-db.yml
 ```
@@ -728,6 +728,14 @@ Each milestone ends with a stop for your review.
   and supplements that don't renumber printed pages.
 * Print queue (paper, copies, status).
 * Template fields from characters (§M1b).
+
+* As built: print pages are HTML strings built in `src/core/print` (named
+  @page per size and paper, the organizer strip absolutely positioned at
+  the top of the first page, table header/footer rows repeating the
+  margins), printed by main in a window with JavaScript off from
+  `app://print`; pdf-lib merges, stamps page numbers and shelf marks, and
+  imposes booklets and cards. Word files come from the `docx` library and
+  use installed fonts. Writer profiles are per world.
 
 ### M5: Items, economy and maps
 * Item catalogue with every field in the brief; currency with a sub-unit;
