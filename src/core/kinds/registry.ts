@@ -39,3 +39,13 @@ export function readData<Data extends z.ZodType>(
 }
 
 export const emptySecret = z.object({}).catchall(z.unknown());
+
+/** Reads a record's organizer-only part with its kind's schema (defaults if absent). */
+export function readSecret<Secret extends z.ZodType>(
+  definition: KindDefinition<z.ZodType, Secret>,
+  secret: { data: Record<string, unknown> } | undefined,
+): z.infer<Secret> {
+  const parsed = definition.secret.safeParse(secret?.data ?? {});
+  if (parsed.success) return parsed.data;
+  return definition.secret.parse({});
+}
