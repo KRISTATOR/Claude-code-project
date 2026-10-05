@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0 to 6 are done; next is M7.**
+Status: **approved 2026-10-05. Milestones 0 to 7 are done; next is M8.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -488,8 +488,10 @@ file_text       file_id, team_id, version_id, text
 
 -- later: append-only tables, because they're logs rather than documents
 ledger_entries   (M5)  as built: `transfer` records instead (see M5)
-event_log        (M7)  timestamped backstage log
-tracker_readings (M7)  value of a per-game tracked field for a character, over time
+event_log        (M7)  id (client), team_id, game_id, kind (note|phase|block|delivered|incident),
+                       text, record_id?, at, author_id, author_person   -- crew read; RPC write
+tracker_readings (M7)  id (client), team_id, game_id, definition_id, subject_id, value, text,
+                       at, author_id, author_person                     -- crew read; RPC write
 
 -- personal data, deliberately kept out of `records`, search and exports (M6)
 registrations   id, team_id, game_id, person_id, character_id, name, status,
@@ -531,7 +533,7 @@ registrations   id, team_id, game_id, person_id, character_id, name, status,
 * **M1a:** `create_team`, `create_invite`, `join_team`, `visible_record_ids`, `record_readers`, `set_member_role`, `remove_member`. Edge Function: `admin-set-password`.
 * **M1b:** `checkout_file`, `heartbeat_lock`, `commit_file_version`, `release_lock`, `force_release_lock`, `restore_file_version`, `prune_versions`.
 * **M6:** `update_my_registration`.
-* **M7:** `mark_delivered`, `append_event`, `record_reading`. All idempotent, so the outbox can replay them.
+* **M7:** `mark_delivered`, `append_event`, `record_reading`. All idempotent, so the outbox can replay them. Callable by organizers and NPC actors ("crew") for records they can read.
 
 ---
 
@@ -787,6 +789,14 @@ Each milestone ends with a stop for your review.
 * Event log, per-character status tracker with fields defined per game
   (wounds, blood loss, infection, drunkenness…), quick lookup.
 * Offline outbox (§2.10) and a clear online/offline indicator.
+
+* As built: the current phase and block are not stored anywhere; they are
+  the latest `phase`/`block` entries of the event log, so moving the game on
+  works offline like any other log entry. The outbox is a Dexie table;
+  every entry carries the id of the row it creates, it is applied to the
+  local cache at once and sent oldest first. A connection error keeps it
+  queued, and a refusal marks it for retry or discard. Reconcile never
+  deletes local rows that are still in the outbox.
 
 ### M8: Import and polish
 * Google Drive importer: `.zip` and multi-part Takeout, duplicate names,

@@ -3,6 +3,33 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 0.8.0: Milestone 7, live game (2026-10-05)
+
+Database: new `event_log` and `tracker_readings` tables (migration
+`20261009090000`), with RLS and the server functions `append_event`,
+`record_reading` and `mark_delivered`. Expand-only.
+
+### Added
+- **Živá hra:** the big-button dashboard for the backstage tent. It shows
+  the current phase and block with the time they started, and has buttons
+  to start the next phase or block (or jump to any). "Na řadě" lists what
+  is still left in the current phase and block: run-of-show beats, NPC
+  appearances and documents to deliver, in delivery order. One click on
+  "Doručeno" / "Hotovo" marks one done and logs it.
+- **Deník:** the backstage event log, with notes and incidents (Ctrl+Enter
+  writes). It also records phase changes and deliveries automatically.
+  Organizers and NPC actors see it; players never do.
+- **Stav postav:** status fields defined per game (wounds, blood loss,
+  infection, drunkenness…). Each is a number with limits, named levels or
+  yes/no, and can apply to characters, NPCs or both. Values have big +/−
+  buttons, notes, a warning colour at a threshold and a history per
+  character. Search by character or player name.
+- **Offline outbox:** log entries, tracker values and "doručeno" work
+  without a connection. They show at once, wait in a queue and go out when
+  the connection returns. Sending twice is harmless. The header shows how
+  many are waiting, and lets you retry or discard any the server refused.
+  The sync badge switches to "Offline" as soon as the network drops.
+
 ## 0.7.0: Milestone 6, logistics (2026-10-05)
 
 Database: a new `registrations` table (migration `20261008090000`), with RLS
