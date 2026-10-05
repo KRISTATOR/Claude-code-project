@@ -27,6 +27,11 @@ export function formatDate(date: Date): string {
     .replace(/\u202f/g, ' ');
 }
 
+/** "14:32" */
+export function formatTime(date: Date): string {
+  return new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' }).format(date);
+}
+
 /** "5. 10. 2026 14:32" */
 export function formatDateTime(date: Date): string {
   const time = new Intl.DateTimeFormat(LOCALE, { hour: '2-digit', minute: '2-digit' }).format(date);

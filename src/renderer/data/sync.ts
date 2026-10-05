@@ -1,10 +1,13 @@
+import type { Table } from 'dexie';
 import { z } from 'zod';
 import {
+  eventRow,
   fileLockRow,
   fileTextRow,
   inviteRow,
   memberRow,
   personRow,
+  readingRow,
   recordAccessRow,
   recordLinkRow,
   recordPersonRow,
@@ -15,7 +18,7 @@ import {
   type MemberRole,
 } from '@core/model';
 import type { Cache } from './cache';
-import { classifyError, type Remote } from './remote';
+import { classifyError, type Remote, type SyncTable } from './remote';
 
 export type SyncState = 'idle' | 'syncing' | 'offline' | 'paused' | 'error';
 
@@ -196,6 +199,8 @@ export class SyncEngine {
 
     await this.pullRecords(teamId);
     await this.pullFileText(teamId);
+    await this.pullLog(teamId, 'event_log', eventRow, c.events);
+    await this.pullLog(teamId, 'tracker_readings', readingRow, c.readings);
     if (myRole === 'organizer') await this.pullSecrets(teamId);
     else await c.secrets.where('team_id').equals(teamId).delete();
 
@@ -286,6 +291,63 @@ export class SyncEngine {
     );
   }
 
+  /** Live-game logs: append-only, pulled incrementally like records. */
+  private async pullLog<T extends { id: string; updated_at: string }>(
+    teamId: string,
+    table: SyncTable,
+    schema: z.ZodType<T>,
+    target: Table<T, string>,
+  ): Promise<void> {
+    const key = `cursor:${table}:${teamId}`;
+    const cursor = await this.cache.getMeta<string>(key);
+    const since = this.since(cursor);
+    const rows = z.array(schema).parse(
+      await this.remote.selectAll(table, {
+        eq: { column: 'team_id', value: teamId },
+        ...(since ? { since } : {}),
+      }),
+    );
+    if (rows.length === 0) return;
+    await target.bulkPut(rows);
+    await this.cache.setMeta(
+      key,
+      maxTimestamp(
+        rows.map((row) => row.updated_at),
+        cursor,
+      ),
+    );
+  }
+
+  /**
+   * Removes log rows an organizer deleted (or that this user may no longer
+   * read), except the ones still waiting in the outbox.
+   */
+  private async reconcileLog<T extends { id: string }>(
+    teamId: string,
+    table: SyncTable,
+    schema: z.ZodType<T>,
+    target: Table<T, string>,
+  ): Promise<void> {
+    const eq = { column: 'team_id', value: teamId };
+    const visible = new Set(
+      z
+        .array(z.object({ id: z.string() }))
+        .parse(await this.remote.selectAll(table, { eq, columns: 'id' }))
+        .map((row) => row.id),
+    );
+    const pending = new Set(await this.cache.outbox.where('team_id').equals(teamId).primaryKeys());
+    const local = await target.where('team_id').equals(teamId).primaryKeys();
+    await target.bulkDelete(local.filter((id) => !visible.has(id) && !pending.has(id)));
+    const localSet = new Set(local);
+    const missing = [...visible].filter((id) => !localSet.has(id));
+    for (const ids of chunks(missing, FETCH_CHUNK)) {
+      const rows = z
+        .array(schema)
+        .parse(await this.remote.selectAll(table, { eq, in: { column: 'id', values: ids } }));
+      await target.bulkPut(rows);
+    }
+  }
+
   /** Deletes local rows the server no longer returns (deleted or hidden). */
   private async reconcile(teamId: string, organizer: boolean): Promise<void> {
     const eq = { column: 'team_id', value: teamId };
@@ -322,6 +384,9 @@ export class SyncEngine {
       await this.cache.fileText.bulkPut(rows);
     }
 
+    await this.reconcileLog(teamId, 'event_log', eventRow, this.cache.events);
+    await this.reconcileLog(teamId, 'tracker_readings', readingRow, this.cache.readings);
+
     if (organizer) {
       const secretRows = z
         .array(z.object({ record_id: z.string() }))
@@ -349,6 +414,9 @@ export class SyncEngine {
         c.locks,
         c.fileText,
         c.registrations,
+        c.events,
+        c.readings,
+        c.outbox,
       ],
       async () => {
         await c.teams.delete(teamId);
@@ -364,6 +432,9 @@ export class SyncEngine {
           c.locks,
           c.fileText,
           c.registrations,
+          c.events,
+          c.readings,
+          c.outbox,
         ]) {
           await table.where('team_id').equals(teamId).delete();
         }
@@ -373,6 +444,8 @@ export class SyncEngine {
       `cursor:records:${teamId}`,
       `cursor:secrets:${teamId}`,
       `cursor:fileText:${teamId}`,
+      `cursor:event_log:${teamId}`,
+      `cursor:tracker_readings:${teamId}`,
       `reconciledAt:${teamId}`,
     ]);
   }

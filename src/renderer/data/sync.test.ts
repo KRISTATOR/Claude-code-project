@@ -24,6 +24,8 @@ class FakeRemote implements Remote {
     file_locks: [],
     file_text: [],
     registrations: [],
+    event_log: [],
+    tracker_readings: [],
   };
   failWith: RemoteError | null = null;
   calls: { table: SyncTable; options?: SelectOptions }[] = [];
@@ -352,5 +354,52 @@ describe('SyncEngine', () => {
     remote.visible.registrations = [];
     await engine.sync(teamId);
     expect(await cache.registrations.count()).toBe(0);
+  });
+
+  it('pulls the live log and keeps entries still waiting in the outbox', async () => {
+    const event = (id: string) => ({
+      id,
+      team_id: teamId,
+      game_id: randomUUID(),
+      kind: 'note',
+      text: 'Začala bouřka',
+      record_id: null,
+      at: at(clock),
+      author_id: null,
+      author_person: null,
+      created_at: at(clock),
+      updated_at: at(clock),
+    });
+    const onServer = randomUUID();
+    const deleted = randomUUID();
+    const pending = randomUUID();
+    remote.visible.event_log = [event(onServer), event(deleted)];
+    remote.visible.tracker_readings = [
+      {
+        ...event(randomUUID()),
+        definition_id: randomUUID(),
+        subject_id: randomUUID(),
+        value: '2',
+        text: '',
+      },
+    ];
+    await engine.sync(teamId);
+    expect(await cache.events.count()).toBe(2);
+    expect((await cache.readings.toArray())[0]?.value).toBe(2);
+
+    await cache.events.put(event(pending) as never);
+    await cache.outbox.put({
+      id: pending,
+      team_id: teamId,
+      op: 'append_event',
+      args: {},
+      created_at: at(clock),
+      error: null,
+    });
+    remote.visible.event_log = [event(onServer)];
+    await engine.sync(teamId, { reconcile: true });
+    expect((await cache.events.toCollection().primaryKeys()).sort()).toEqual(
+      [onServer, pending].sort(),
+    );
   });
 });

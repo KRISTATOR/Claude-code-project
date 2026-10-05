@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type CDPSession, type Locator, type Page } from '@playwright/test';
 import { connect, signUp, uniqueEmail, type LaunchedApp, type StackEnv } from './app';
 
 /** Clicks a navigation item, opening its collapsed group first if needed. */
@@ -95,8 +95,12 @@ export async function setUpTeam(
 /** Adds a phase named `name` (labelled 0, 1, 2… in order of creation). */
 export async function createPhase(page: Page, name: string): Promise<void> {
   await go(page, 'Fáze a bloky');
+  const fields = page.getByTestId('phases').getByLabel('Název');
+  const before = await fields.count();
   await page.getByRole('button', { name: 'Nová fáze' }).click();
-  const field = page.getByTestId('phases').getByLabel('Název').last();
+  // Wait for the new row, or the name would go into the previous phase.
+  await expect(fields).toHaveCount(before + 1);
+  const field = fields.last();
   await field.fill(name);
   await field.press('Tab');
 }
@@ -113,4 +117,22 @@ export async function createCharacter(page: Page, name: string, player?: string)
     await page.getByRole('button', { name: 'Uložit', exact: true }).click();
     await expect(page.getByText('Uloženo').first()).toBeVisible();
   }
+}
+
+const cdpSessions = new Map<Page, CDPSession>();
+
+/** Cuts the renderer's network (Electron ignores context.setOffline). */
+export async function setOffline(page: Page, offline: boolean): Promise<void> {
+  let cdp = cdpSessions.get(page);
+  if (!cdp) {
+    cdp = await page.context().newCDPSession(page);
+    await cdp.send('Network.enable');
+    cdpSessions.set(page, cdp);
+  }
+  await cdp.send('Network.emulateNetworkConditions', {
+    offline,
+    latency: 0,
+    downloadThroughput: -1,
+    uploadThroughput: -1,
+  });
 }

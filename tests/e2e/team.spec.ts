@@ -1,5 +1,6 @@
-import { expect, test, type CDPSession, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { connect, launchApp, signIn, signUp, stackEnv, uniqueEmail, type LaunchedApp } from './app';
+import { setOffline } from './helpers';
 
 const stack = stackEnv();
 test.skip(!stack, 'needs a Supabase stack (scripts/local-stack or CI)');
@@ -13,24 +14,6 @@ let inviteCode = '';
 
 async function navigate(page: Page, label: string) {
   await page.getByRole('navigation').getByText(label, { exact: true }).click();
-}
-
-const cdpSessions = new Map<Page, CDPSession>();
-
-/** Cuts the renderer's network (Electron ignores context.setOffline). */
-async function setOffline(page: Page, offline: boolean) {
-  let cdp = cdpSessions.get(page);
-  if (!cdp) {
-    cdp = await page.context().newCDPSession(page);
-    await cdp.send('Network.enable');
-    cdpSessions.set(page, cdp);
-  }
-  await cdp.send('Network.emulateNetworkConditions', {
-    offline,
-    latency: 0,
-    downloadThroughput: -1,
-    uploadThroughput: -1,
-  });
 }
 
 async function syncNow(page: Page) {

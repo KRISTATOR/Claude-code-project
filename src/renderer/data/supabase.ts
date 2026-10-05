@@ -23,15 +23,4 @@ export function createSupabase(config: ConnectionConfig) {
 
 export type Client = ReturnType<typeof createSupabase>;
 
-/** Plain fields of a Supabase/PostgREST error, for classifyError(). */
-export function errorFields(
-  error: { message: string; code?: string | undefined } | null,
-  status: number,
-): { message: string; code?: string; status: number } {
-  const fields: { message: string; code?: string; status: number } = {
-    message: error?.message ?? 'unknown error',
-    status,
-  };
-  if (error?.code) fields.code = error.code;
-  return fields;
-}
+export { errorFields } from './call';

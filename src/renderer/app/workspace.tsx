@@ -9,8 +9,10 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
-import type { MemberRole, MemberRow, TeamRow } from '@core/model';
+import { recordRow, type MemberRole, type MemberRow, type TeamRow } from '@core/model';
+import { call } from '../data/call';
 import { openCache, type Cache } from '../data/cache';
+import { Outbox } from '../data/outbox';
 import { Repo } from '../data/repo';
 import { SupabaseRemote } from '../data/supabase-remote';
 import { SyncEngine, type SyncStatus } from '../data/sync';
@@ -144,6 +146,21 @@ export function WorkspaceProvider({
             },
             poke,
           )
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'event_log', filter: `team_id=eq.${teamId}` },
+            poke,
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'tracker_readings',
+              filter: `team_id=eq.${teamId}`,
+            },
+            poke,
+          )
           .subscribe((status) => {
             realtimeOk = status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED;
           })
@@ -159,11 +176,15 @@ export function WorkspaceProvider({
     }, 5_000);
     const onOnline = () => void engine.sync(teamId, { reconcile: true });
     window.addEventListener('online', onOnline);
+    // A sync attempt notices the lost connection and shows "Offline" at once.
+    const onOffline = () => void engine.sync(teamId);
+    window.addEventListener('offline', onOffline);
 
     return () => {
       clearTimeout(debounce);
       clearInterval(timer);
       window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
       if (channel) void client.removeChannel(channel);
     };
   }, [client, engine, teamId, offline]);
@@ -206,8 +227,12 @@ export interface TeamContextValue {
   me: MemberRow;
   role: MemberRole;
   repo: Repo;
+  /** Live-game writes that also work offline (event log, trackers, "doručeno"). */
+  outbox: Outbox;
   /** Organizer and able to reach the server. */
   canEdit: boolean;
+  /** Organizer or NPC actor: may log events and readings, online or not. */
+  canLog: boolean;
   isOrganizer: boolean;
 }
 
@@ -228,7 +253,37 @@ export function TeamProvider({
   const { client } = useBackend();
   const { cache, offline } = useWorkspace();
   const status = useSyncStatus();
+  const { engine, user } = useWorkspace();
   const repo = useMemo(() => new Repo(client, cache, team.id), [client, cache, team.id]);
+  const outbox = useMemo(
+    () =>
+      new Outbox(
+        (fn, args) => client.rpc(fn, args),
+        async (id) =>
+          recordRow.parse(await call(client.from('records').select().eq('id', id).single())),
+        cache,
+        team.id,
+        me.person_id,
+        user.id,
+        () => {
+          void engine.sync(team.id);
+        },
+      ),
+    [client, cache, team.id, me.person_id, user.id, engine],
+  );
+  // Send what waits in the outbox: now, when the connection returns, and
+  // every 15 seconds while anything is queued.
+  useEffect(() => {
+    if (readOnly) return;
+    const flush = () => void outbox.flush();
+    flush();
+    const timer = setInterval(flush, 15_000);
+    window.addEventListener('online', flush);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('online', flush);
+    };
+  }, [outbox, readOnly]);
   const reachable = !offline && status.state !== 'offline' && status.state !== 'paused';
   const value = useMemo<TeamContextValue>(
     () => ({
@@ -236,10 +291,12 @@ export function TeamProvider({
       me,
       role: me.role,
       repo,
+      outbox,
       isOrganizer: me.role === 'organizer',
       canEdit: me.role === 'organizer' && reachable && !readOnly,
+      canLog: (me.role === 'organizer' || me.role === 'npc') && !readOnly,
     }),
-    [team, me, repo, reachable, readOnly],
+    [team, me, repo, outbox, reachable, readOnly],
   );
   return <TeamContext.Provider value={value}>{children}</TeamContext.Provider>;
 }

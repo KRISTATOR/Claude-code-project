@@ -15,7 +15,9 @@ import {
 } from '@mantine/core';
 import { spotlight } from '@mantine/spotlight';
 import {
+  IconActivityHeartbeat,
   IconBackpack,
+  IconBolt,
   IconBriefcase,
   IconChecklist,
   IconClipboardCheck,
@@ -106,6 +108,9 @@ import { RulesPage } from '../lore/RulesPage';
 import { RunOfShowPage } from '../lore/RunOfShowPage';
 import { WikiPage } from '../lore/WikiPage';
 import { HomePage } from './pages/HomePage';
+import { OutboxBadge } from '../components/OutboxBadge';
+import { LivePage } from '../live/LivePage';
+import { TrackersPage } from '../live/TrackersPage';
 import { BudgetPage } from '../logistics/BudgetPage';
 import { EquipmentPage } from '../logistics/EquipmentPage';
 import { FeedbackPage } from '../logistics/FeedbackPage';
@@ -146,6 +151,13 @@ export function Shell() {
     { to: '/svety', label: t('nav.worlds'), icon: <IconMap2 size={18} /> },
   ];
   const game: NavItem[] = [
+    { to: '/zive', label: t('nav.live'), icon: <IconBolt size={18} />, notForPlayers: true },
+    {
+      to: '/stav',
+      label: t('nav.trackers'),
+      icon: <IconActivityHeartbeat size={18} />,
+      notForPlayers: true,
+    },
     { to: '/postavy', label: t('nav.characters'), icon: <IconUser size={18} /> },
     { to: '/skupiny', label: t('nav.groups'), icon: <IconFlag size={18} /> },
     { to: '/vztahy', label: t('nav.relationships'), icon: <IconHierarchy2 size={18} /> },
@@ -324,6 +336,7 @@ export function Shell() {
           </Group>
           <Group gap="md" wrap="nowrap">
             <EditingIndicator />
+            <OutboxBadge />
             <SyncBadge />
             <ThemeSwitch />
           </Group>
@@ -463,6 +476,8 @@ export function Shell() {
           <Route path="/cesty" element={<TravelPage />} />
           <Route path="/spani" element={<SleepingPage />} />
           <Route path="/sklad" element={<InventoryPage />} />
+          <Route path="/zive" element={<LivePage />} />
+          <Route path="/stav" element={<TrackersPage />} />
           <Route path="/prihlasky" element={<RegistrationsPage />} />
           <Route path="/moje-prihlaska" element={<MyRegistrationPage />} />
           <Route path="/jidlo" element={<FoodPage />} />

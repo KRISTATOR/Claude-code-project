@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { formatBytes, formatCzk, formatDate, formatDateTime, formatNumber, parseNumber } from '.';
+import {
+  formatBytes,
+  formatCzk,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  formatTime,
+  parseNumber,
+} from '.';
 
 const NBSP = ' ';
 
@@ -26,6 +34,7 @@ describe('formatDate', () => {
     const date = new Date(2026, 9, 5, 14, 32);
     expect(formatDate(date)).toBe('5. 10. 2026');
     expect(formatDateTime(date)).toBe('5. 10. 2026 14:32');
+    expect(formatTime(date)).toBe('14:32');
   });
 });
 

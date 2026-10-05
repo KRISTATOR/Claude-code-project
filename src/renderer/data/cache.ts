@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import type {
+  EventRow,
   FileLockRow,
   FileTextRow,
   InviteRow,
@@ -9,10 +10,23 @@ import type {
   RecordLinkRow,
   RecordPersonRow,
   RecordRow,
+  ReadingRow,
   RecordSecretRow,
   RegistrationRow,
   TeamRow,
 } from '@core/model';
+
+/** A live-game write waiting to reach the server (docs/PLAN.md §2.10). */
+export interface OutboxRow {
+  /** The id of the event or reading it creates, so a replay is harmless. */
+  id: string;
+  team_id: string;
+  op: 'append_event' | 'record_reading' | 'mark_delivered';
+  args: Record<string, unknown>;
+  created_at: string;
+  /** Why the server refused it (it stays until someone discards it). */
+  error: string | null;
+}
 
 export interface MetaRow {
   key: string;
@@ -37,6 +51,9 @@ export class Cache extends Dexie {
   locks!: Table<FileLockRow, string>;
   fileText!: Table<FileTextRow, string>;
   registrations!: Table<RegistrationRow, string>;
+  events!: Table<EventRow, string>;
+  readings!: Table<ReadingRow, string>;
+  outbox!: Table<OutboxRow, string>;
 
   constructor(name: string) {
     super(name);
@@ -60,6 +77,12 @@ export class Cache extends Dexie {
     // M6: registrations (personal data; only what the server lets this user read).
     this.version(3).stores({
       registrations: 'id, team_id, game_id, person_id',
+    });
+    // M7: the live game's logs and the outbox for writes made offline.
+    this.version(4).stores({
+      events: 'id, team_id, game_id, updated_at',
+      readings: 'id, team_id, game_id, updated_at',
+      outbox: 'id, team_id, created_at',
     });
   }
 

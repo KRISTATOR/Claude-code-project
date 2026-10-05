@@ -16,7 +16,10 @@ import {
 import type { CloneResult } from '@core/lore/clone';
 import type { Cache } from './cache';
 import { classifyError, RemoteError } from './remote';
-import { errorFields, type Client } from './supabase';
+import { call } from './call';
+import type { Client } from './supabase';
+
+export { call };
 
 export interface NewRecord {
   kind: string;
@@ -37,24 +40,6 @@ export type RecordPatch = Partial<
     'title' | 'data' | 'parent_id' | 'sort_key' | 'tags' | 'deleted_at' | 'inherit_audience'
   >
 >;
-
-interface Response {
-  data: unknown;
-  error: { message: string; code?: string } | null;
-  status: number;
-}
-
-/** Awaits a Supabase call; returns its data as `unknown` (parse it with zod). */
-export async function call(promise: PromiseLike<Response>): Promise<unknown> {
-  let response: Response;
-  try {
-    response = await promise;
-  } catch (thrown) {
-    throw classifyError(thrown);
-  }
-  if (response.error) throw classifyError(errorFields(response.error, response.status));
-  return response.data;
-}
 
 const readerRow = z.object({
   person_id: z.string(),

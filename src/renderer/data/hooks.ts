@@ -9,7 +9,9 @@ import {
   type ReactNode,
 } from 'react';
 import type {
+  EventRow,
   PersonRow,
+  ReadingRow,
   RecordPersonRow,
   RecordRow,
   RecordSecretRow,
@@ -164,6 +166,39 @@ export function useRegistrations(gameId: string | null | undefined): Registratio
   return useMemo(
     () => (preview ? rows?.filter((row) => row.person_id === preview.personId) : rows),
     [rows, preview],
+  );
+}
+
+/** The live game's event log of one game (crew only; empty in "view as player"). */
+export function useEvents(gameId: string | null | undefined): EventRow[] | undefined {
+  const { cache } = useWorkspace();
+  const preview = usePreview();
+  const rows = useLiveQuery(
+    async () => (gameId ? cache.events.where('game_id').equals(gameId).toArray() : []),
+    [cache, gameId],
+  );
+  return preview ? NO_EVENTS : rows;
+}
+const NO_EVENTS: EventRow[] = [];
+
+export function useReadings(gameId: string | null | undefined): ReadingRow[] | undefined {
+  const { cache } = useWorkspace();
+  const preview = usePreview();
+  const rows = useLiveQuery(
+    async () => (gameId ? cache.readings.where('game_id').equals(gameId).toArray() : []),
+    [cache, gameId],
+  );
+  return preview ? NO_READINGS : rows;
+}
+const NO_READINGS: ReadingRow[] = [];
+
+/** Live-game writes waiting for the server, oldest first. */
+export function useOutbox() {
+  const { cache } = useWorkspace();
+  const { team } = useTeam();
+  return useLiveQuery(
+    () => cache.outbox.where('team_id').equals(team.id).sortBy('created_at'),
+    [cache, team.id],
   );
 }
 
