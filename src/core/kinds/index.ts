@@ -20,6 +20,14 @@ import {
   propDocumentKind,
   writerProfileKind,
 } from './documents';
+import {
+  currencyKind,
+  inventoryItemKind,
+  itemKind,
+  lootTableKind,
+  recipeKind,
+  transferKind,
+} from './economy';
 import { fileKind } from './file';
 import { folderKind } from './folder';
 import { gameKind } from './game';
@@ -39,12 +47,15 @@ import {
   rulebookVersionKind,
 } from './lore';
 import type { KindDefinition } from './registry';
+import { mapKind, mapLayerKind, sleepingPlanKind, travelRouteKind } from './maps';
 import { worldKind } from './world';
 
 export { fileKind, folderKind, gameKind, worldKind };
 export * from './characters';
 export * from './lore';
 export * from './documents';
+export * from './economy';
+export * from './maps';
 export { gameStatuses, type GameStatus } from './game';
 export { readData, readSecret, type KindDefinition } from './registry';
 
@@ -84,4 +95,14 @@ export const kinds: Record<string, KindDefinition> = {
   [archiveKind.kind]: archiveKind,
   [archivePartKind.kind]: archivePartKind,
   [printJobKind.kind]: printJobKind,
+  [itemKind.kind]: itemKind,
+  [currencyKind.kind]: currencyKind,
+  [transferKind.kind]: transferKind,
+  [recipeKind.kind]: recipeKind,
+  [lootTableKind.kind]: lootTableKind,
+  [inventoryItemKind.kind]: inventoryItemKind,
+  [mapKind.kind]: mapKind,
+  [mapLayerKind.kind]: mapLayerKind,
+  [travelRouteKind.kind]: travelRouteKind,
+  [sleepingPlanKind.kind]: sleepingPlanKind,
 };

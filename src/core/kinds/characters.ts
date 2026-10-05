@@ -41,7 +41,7 @@ export const defaultSections: SheetSection[] = [
     title: 'Majetek',
     type: 'property',
     audience: 'player',
-    hint: 'Předměty z katalogu přibudou v milníku 5.',
+    hint: 'Co postava drží podle katalogu předmětů a záznamu převodů.',
   },
   {
     key: 'secrets',

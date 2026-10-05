@@ -39,6 +39,16 @@ const gameKinds = [
   'archive',
   'archive_part',
   'print_job',
+  // M5
+  'item',
+  'currency',
+  'transfer',
+  'recipe',
+  'loot_table',
+  'map',
+  'map_layer',
+  'travel_route',
+  'sleeping_plan',
 ];
 const worldKinds = [
   'definition',
@@ -48,6 +58,8 @@ const worldKinds = [
   'canon_entry',
   'rulebook',
   'writer_profile',
+  'map',
+  'travel_route',
 ];
 /** Kinds a person is attached to (rule R4) and how. */
 const attachable: Record<string, 'player' | 'actor'> = { character: 'player', npc: 'actor' };
@@ -214,5 +226,42 @@ describe('[[links]] and backlinks', () => {
     expect(await links(team.organizer, page)).toEqual([hidden, shared].sort());
     expect(await links(team.player1, page)).toEqual([shared]);
     expect(await links(team.outsider, page)).toEqual([]);
+  });
+});
+
+describe('team-wide props inventory', () => {
+  it('belongs to no world or game; organizers only by default, shared on purpose', async () => {
+    const hidden = await insertRecord(db, team, { kind: 'inventory_item' });
+    const shared = await insertRecord(db, team, { kind: 'inventory_item', visibility: 'everyone' });
+    expect(await canSee(db, team.organizer2, hidden)).toBe(true);
+    expect(await canSee(db, team.player1, hidden)).toBe(false);
+    expect(await canSee(db, team.npc, hidden)).toBe(false);
+    expect(await canSee(db, team.player1, shared)).toBe(true);
+    expect(await canSee(db, team.outsider, shared)).toBe(false);
+  });
+});
+
+describe('map layers', () => {
+  it('a secret layer stays hidden while the map and its public layer are shared', async () => {
+    const map = await insertRecord(db, team, {
+      kind: 'map',
+      game_id: game,
+      visibility: 'everyone',
+    });
+    const clean = await insertRecord(db, team, {
+      kind: 'map_layer',
+      game_id: game,
+      parent_id: map,
+      visibility: 'everyone',
+    });
+    const cellar = await insertRecord(db, team, {
+      kind: 'map_layer',
+      game_id: game,
+      parent_id: map,
+    });
+    expect(await canSee(db, team.player1, map)).toBe(true);
+    expect(await canSee(db, team.player1, clean)).toBe(true);
+    expect(await canSee(db, team.player1, cellar)).toBe(false);
+    expect(await canSee(db, team.organizer2, cellar)).toBe(true);
   });
 });
