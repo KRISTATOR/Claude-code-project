@@ -20,6 +20,8 @@ export function buildCsp(config: ConnectionConfig | null, options: { dev: boolea
     'style-src': ["'self'", "'unsafe-inline'"],
     'img-src': ["'self'", 'data:', 'blob:'],
     'font-src': ["'self'", 'data:'],
+    // pdf.js runs its parser in a worker served by the app itself.
+    'worker-src': ["'self'", 'blob:'],
     'connect-src': connect,
     'object-src': ["'none'"],
     'base-uri': ["'none'"],

@@ -55,3 +55,37 @@ export function parseInviteLink(url: string): string | null {
     return null;
   }
 }
+
+export const sha256Input = z.string().regex(/^[0-9a-f]{64}$/);
+export const uuidInput = z.uuid();
+export const MAX_BLOB_BYTES = 60 * 1024 * 1024;
+export const blobDataInput = z
+  .instanceof(Uint8Array)
+  .refine((bytes) => bytes.byteLength <= MAX_BLOB_BYTES);
+
+export const openEditInput = z.object({
+  fileId: z.uuid(),
+  sessionId: z.uuid(),
+  name: z.string().min(1).max(255),
+  sha: sha256Input,
+});
+
+export const openViewInput = z.object({
+  fileId: z.uuid(),
+  name: z.string().min(1).max(255),
+  sha: sha256Input,
+});
+
+/** A relative path inside the backup archive: no "..", no absolute paths. */
+export const backupEntryInput = z
+  .string()
+  .min(1)
+  .max(400)
+  .refine(
+    (path) =>
+      !path.startsWith('/') &&
+      !/^[a-z]:/i.test(path) &&
+      !path.split(/[\\/]/).some((part) => part === '..' || part === '') &&
+      isSafeFileName(path.replace(/[\\/]/g, '_')),
+    { message: 'invalid-path' },
+  );

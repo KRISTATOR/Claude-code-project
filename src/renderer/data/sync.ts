@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import {
+  fileLockRow,
+  fileTextRow,
   inviteRow,
   memberRow,
   personRow,
@@ -34,6 +36,7 @@ const PAGE_TABLES = {
   record_access: recordAccessRow,
   record_people: recordPersonRow,
   record_links: recordLinkRow,
+  file_locks: fileLockRow,
 } as const;
 
 type Listener = () => void;
@@ -165,7 +168,7 @@ export class SyncEngine {
     const c = this.cache;
     await c.transaction(
       'rw',
-      [c.people, c.members, c.invites, c.access, c.recordPeople, c.links],
+      [c.people, c.members, c.invites, c.access, c.recordPeople, c.links, c.locks],
       async () => {
         await c.people.where('team_id').equals(teamId).delete();
         await c.people.bulkPut(parsed.people);
@@ -179,10 +182,13 @@ export class SyncEngine {
         await c.recordPeople.bulkPut(parsed.record_people);
         await c.links.where('team_id').equals(teamId).delete();
         await c.links.bulkPut(parsed.record_links);
+        await c.locks.where('team_id').equals(teamId).delete();
+        await c.locks.bulkPut(parsed.file_locks);
       },
     );
 
     await this.pullRecords(teamId);
+    await this.pullFileText(teamId);
     if (myRole === 'organizer') await this.pullSecrets(teamId);
     else await c.secrets.where('team_id').equals(teamId).delete();
 
@@ -240,6 +246,27 @@ export class SyncEngine {
     );
   }
 
+  private async pullFileText(teamId: string): Promise<void> {
+    const key = `cursor:fileText:${teamId}`;
+    const cursor = await this.cache.getMeta<string>(key);
+    const since = this.since(cursor);
+    const rows = z.array(fileTextRow).parse(
+      await this.remote.selectAll('file_text', {
+        eq: { column: 'team_id', value: teamId },
+        ...(since ? { since } : {}),
+      }),
+    );
+    if (rows.length === 0) return;
+    await this.cache.fileText.bulkPut(rows);
+    await this.cache.setMeta(
+      key,
+      maxTimestamp(
+        rows.map((row) => row.updated_at),
+        cursor,
+      ),
+    );
+  }
+
   /** Deletes local rows the server no longer returns (deleted or hidden). */
   private async reconcile(teamId: string, organizer: boolean): Promise<void> {
     const eq = { column: 'team_id', value: teamId };
@@ -249,6 +276,13 @@ export class SyncEngine {
     const visible = new Set(idRows.map((row) => row.id));
     const localIds = await this.cache.records.where('team_id').equals(teamId).primaryKeys();
     await this.cache.records.bulkDelete(localIds.filter((id) => !visible.has(id)));
+
+    const textRows = z
+      .array(z.object({ file_id: z.string() }))
+      .parse(await this.remote.selectAll('file_text', { eq, columns: 'file_id' }));
+    const visibleText = new Set(textRows.map((row) => row.file_id));
+    const localText = await this.cache.fileText.where('team_id').equals(teamId).primaryKeys();
+    await this.cache.fileText.bulkDelete(localText.filter((id) => !visibleText.has(id)));
 
     if (organizer) {
       const secretRows = z
@@ -274,6 +308,8 @@ export class SyncEngine {
         c.access,
         c.recordPeople,
         c.links,
+        c.locks,
+        c.fileText,
       ],
       async () => {
         await c.teams.delete(teamId);
@@ -286,6 +322,8 @@ export class SyncEngine {
           c.access,
           c.recordPeople,
           c.links,
+          c.locks,
+          c.fileText,
         ]) {
           await table.where('team_id').equals(teamId).delete();
         }
@@ -294,6 +332,7 @@ export class SyncEngine {
     await c.meta.bulkDelete([
       `cursor:records:${teamId}`,
       `cursor:secrets:${teamId}`,
+      `cursor:fileText:${teamId}`,
       `reconciledAt:${teamId}`,
     ]);
   }

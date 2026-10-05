@@ -20,14 +20,16 @@ export interface LaunchedApp {
  * Launches the built app (`npm run build:test`). Each launch gets a throwaway
  * user data folder unless one is passed (to simulate restarting the app).
  */
-export async function launchApp(options: { userDataDir?: string } = {}): Promise<LaunchedApp> {
+export async function launchApp(
+  options: { userDataDir?: string; env?: Record<string, string> } = {},
+): Promise<LaunchedApp> {
   const userDataDir = options.userDataDir ?? mkdtempSync(join(tmpdir(), 'zazemi-e2e-'));
   // Launch the project folder so Electron reads package.json (name, version, main).
   const args = ['.'];
   // Chromium refuses to run its sandbox as root (some Linux containers).
   if (process.platform === 'linux' && process.getuid?.() === 0) args.unshift('--no-sandbox');
 
-  const env: Record<string, string> = { ZAZEMI_USER_DATA_DIR: userDataDir };
+  const env: Record<string, string> = { ZAZEMI_USER_DATA_DIR: userDataDir, ...options.env };
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined && key !== 'ELECTRON_RENDERER_URL') env[key] = value;
   }
@@ -74,7 +76,12 @@ export async function connect(page: Page, stack: StackEnv): Promise<void> {
 }
 
 export function uniqueEmail(label: string): string {
-  return `${label}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
+  const ascii =
+    label
+      .normalize('NFD')
+      .replace(/[^a-z0-9]/gi, '')
+      .toLowerCase() || 'user';
+  return `${ascii}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
 }
 
 export async function signUp(

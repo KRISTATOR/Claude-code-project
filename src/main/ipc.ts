@@ -1,14 +1,32 @@
 import { writeFile } from 'node:fs/promises';
+import { hostname } from 'node:os';
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
 import type { AppInfo, ConfigSetResult, SaveFileResult } from '@shared/api';
 import {
+  backupEntryInput,
+  blobDataInput,
   configSetInput,
   IPC,
+  openEditInput,
   openExternalInput,
+  openViewInput,
   saveFileInput,
   secureKeyInput,
   secureValueInput,
+  sha256Input,
+  uuidInput,
 } from '@shared/ipc';
+import { abortBackup, addToBackup, beginBackup, finishBackup } from './backup';
+import { blobUsage, getBlob, hasBlob, putBlob } from './blob-cache';
+import {
+  discard,
+  finish,
+  listSessions,
+  markUploaded,
+  openForEdit,
+  openReadOnly,
+  readWorking,
+} from './office';
 import { buildTimeConfig, clearConfig, loadConfig, saveConfig } from './config';
 import { takePendingInvite } from './deep-links';
 import { secureGet, secureRemove, secureSet } from './secure-store';
@@ -21,6 +39,7 @@ export function registerIpcHandlers(onConfigChanged: () => void): void {
     platform: process.platform,
     isPackaged: app.isPackaged,
     configFromBuild: buildTimeConfig() !== null,
+    machine: hostname().slice(0, 100),
   }));
 
   ipcMain.handle(IPC.configGet, () => loadConfig());
@@ -81,4 +100,43 @@ export function registerIpcHandlers(onConfigChanged: () => void): void {
   });
 
   ipcMain.handle(IPC.takePendingInvite, () => takePendingInvite());
+
+  ipcMain.handle(IPC.blobHas, (_event, sha: unknown) => hasBlob(sha256Input.parse(sha)));
+  ipcMain.handle(IPC.blobGet, (_event, sha: unknown) => getBlob(sha256Input.parse(sha)));
+  ipcMain.handle(IPC.blobPut, (_event, sha: unknown, data: unknown) =>
+    putBlob(sha256Input.parse(sha), blobDataInput.parse(data)),
+  );
+  ipcMain.handle(IPC.blobUsage, () => blobUsage());
+
+  ipcMain.handle(IPC.officeOpenEdit, (_event, input: unknown) =>
+    openForEdit(openEditInput.parse(input)),
+  );
+  ipcMain.handle(IPC.officeOpenView, (_event, input: unknown) =>
+    openReadOnly(openViewInput.parse(input)),
+  );
+  ipcMain.handle(IPC.officeReadWorking, (_event, fileId: unknown) =>
+    readWorking(uuidInput.parse(fileId)),
+  );
+  ipcMain.handle(IPC.officeMarkUploaded, (_event, fileId: unknown, sha: unknown) =>
+    markUploaded(uuidInput.parse(fileId), sha256Input.parse(sha)),
+  );
+  ipcMain.handle(IPC.officeFinish, (_event, fileId: unknown) => finish(uuidInput.parse(fileId)));
+  ipcMain.handle(IPC.officeDiscard, (_event, fileId: unknown) => discard(uuidInput.parse(fileId)));
+  ipcMain.handle(IPC.officeSessions, () => listSessions());
+
+  ipcMain.handle(IPC.backupBegin, (event, name: unknown) =>
+    beginBackup(
+      BrowserWindow.fromWebContents(event.sender),
+      saveFileInput.shape.defaultName.parse(name),
+    ),
+  );
+  ipcMain.handle(IPC.backupAdd, (_event, token: unknown, path: unknown, data: unknown) => {
+    addToBackup(uuidInput.parse(token), backupEntryInput.parse(path), blobDataInput.parse(data));
+  });
+  ipcMain.handle(IPC.backupFinish, (_event, token: unknown) =>
+    finishBackup(uuidInput.parse(token)),
+  );
+  ipcMain.handle(IPC.backupAbort, (_event, token: unknown) => {
+    abortBackup(uuidInput.parse(token));
+  });
 }

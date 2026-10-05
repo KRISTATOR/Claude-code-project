@@ -1,5 +1,7 @@
 import Dexie, { type Table } from 'dexie';
 import type {
+  FileLockRow,
+  FileTextRow,
   InviteRow,
   MemberRow,
   PersonRow,
@@ -31,6 +33,8 @@ export class Cache extends Dexie {
   recordPeople!: Table<RecordPersonRow, [string, string, string]>;
   links!: Table<RecordLinkRow, [string, string, string]>;
   meta!: Table<MetaRow, string>;
+  locks!: Table<FileLockRow, string>;
+  fileText!: Table<FileTextRow, string>;
 
   constructor(name: string) {
     super(name);
@@ -45,6 +49,11 @@ export class Cache extends Dexie {
       recordPeople: '[record_id+person_id+relation], record_id, person_id, team_id',
       links: '[from_id+to_id+kind], from_id, to_id, team_id',
       meta: 'key',
+    });
+    // M1b: file locks and extracted file text for search.
+    this.version(2).stores({
+      locks: 'file_id, team_id',
+      fileText: 'file_id, team_id, updated_at',
     });
   }
 

@@ -5,6 +5,7 @@ import { loadConfig } from './config';
 import { forwardInvite, registerProtocol, rememberStartupInvite } from './deep-links';
 import { buildCsp } from './csp';
 import { registerIpcHandlers } from './ipc';
+import { restoreOfficeSessions } from './office';
 import { configurePaths, configureUserAgent } from './paths';
 import { APP_ORIGIN, handleAppScheme, registerAppScheme } from './protocol';
 import { hardenWebContents } from './security';
@@ -60,6 +61,7 @@ async function start(): Promise<void> {
     });
   });
 
+  await restoreOfficeSessions();
   createWindow();
   startAutoUpdates();
 

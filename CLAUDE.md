@@ -134,8 +134,9 @@ Release workflow: `.github/workflows/release.yml`; installer config:
 * Docker can start (`dockerd &`) but cannot pull image layers through the
   proxy, so the Supabase CLI stack does not work here. Use the local stack
   instead: `npm run stack` (Postgres 16 from the system, PostgREST and
-  Supabase Auth binaries from GitHub releases; no Realtime, no Edge Functions;
-  Storage from M1b). Run it in the background and wait for `ready`.
+  Supabase Auth binaries from GitHub releases, Supabase Storage built from a
+  pinned git commit; no Realtime, no Edge Functions). Run it in the
+  background and wait for `ready`; the first start builds Storage (~2 min).
   RLS tests: `ZAZEMI_TEST_DB_URL=postgres://postgres@127.0.0.1:54322/postgres npm run test:db`.
 * Xvfb is available for end-to-end tests: `xvfb-run -a npm run test:e2e`.
 * Playwright's own browsers are not installed (Electron tests don't need
@@ -143,6 +144,11 @@ Release workflow: `.github/workflows/release.yml`; installer config:
 * `electron-builder --win` gets as far as NSIS packaging and then needs Wine,
   which isn't installed. `npm run dist:dir` (Linux unpacked) works for a quick
   packaging check.
+* Playwright silently drops files whose *path* contains non-ASCII characters
+  when filling an Electron `<input type=file>`. Pass Czech-named files as
+  `{ name, mimeType, buffer }` instead.
+* Office is simulated in test builds: launch with `ZAZEMI_FAKE_OFFICE=edit`
+  (save once, then close) or `keep-open` (save, stay open).
 * Windows and Office can't be run here. The Windows runner in CI builds the
   installer, and the owner tests by hand.
 
@@ -163,3 +169,5 @@ Release workflow: `.github/workflows/release.yml`; installer config:
 | 2026-10-05 | Owner: continue through milestones without waiting for review once each is tested. Open questions in PLAN §8 run on their defaults. |
 | 2026-10-05 | A record inside a hidden game or world is hidden too (container rule in `can_read_as`). |
 | 2026-10-05 | Sync reads disable postgrest-js retries; the engine re-syncs on a timer and on realtime pokes. |
+| 2026-10-05 | Storage objects are named `<team>/<file>/<version>`; storage RLS reuses `can_read_id(file)`. One version row per check-out session; a save after losing the lock is a conflict version. |
+| 2026-10-05 | Trashing a folder trashes its contents with the same timestamp; restoring restores them together. |

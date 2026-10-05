@@ -14,6 +14,8 @@ const ORDER: Record<SyncTable, string> = {
   record_access: 'id',
   record_people: 'record_id',
   record_links: 'from_id',
+  file_locks: 'file_id',
+  file_text: 'file_id',
 };
 
 export class SupabaseRemote implements Remote {

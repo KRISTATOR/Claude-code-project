@@ -128,3 +128,53 @@ export type RecordLinkRow = z.infer<typeof recordLinkRow>;
 export function canEditTeam(role: MemberRole | null | undefined): boolean {
   return role === 'organizer';
 }
+
+export const fileLockRow = z.object({
+  file_id: uuid,
+  team_id: uuid,
+  user_id: uuid,
+  display_name: z.string(),
+  machine: z.string(),
+  session_id: uuid,
+  acquired_at: timestamp,
+  heartbeat_at: timestamp,
+  updated_at: timestamp,
+});
+export type FileLockRow = z.infer<typeof fileLockRow>;
+
+export const fileTextRow = z.object({
+  file_id: uuid,
+  team_id: uuid,
+  version_id: uuid.nullable(),
+  text: z.string(),
+  updated_at: timestamp,
+});
+export type FileTextRow = z.infer<typeof fileTextRow>;
+
+export const fileVersionRow = z.object({
+  id: uuid,
+  team_id: uuid,
+  file_id: uuid,
+  no: z.number().int(),
+  storage_path: z.string(),
+  size: z.coerce.number(),
+  sha256: z.string(),
+  mime: z.string(),
+  session_id: uuid.nullable(),
+  kept: z.boolean(),
+  base_version_id: uuid.nullable(),
+  is_conflict: z.boolean(),
+  pinned: z.boolean(),
+  label: z.string(),
+  created_by: uuid.nullable(),
+  created_at: timestamp,
+  updated_at: timestamp,
+});
+export type FileVersionRow = z.infer<typeof fileVersionRow>;
+
+/** A lock nobody refreshed for this long is stale (matches private.lock_ttl()). */
+export const LOCK_TTL_MS = 10 * 60 * 1000;
+
+export function isLockFresh(lock: Pick<FileLockRow, 'heartbeat_at'>, now: number): boolean {
+  return now - new Date(lock.heartbeat_at).getTime() < LOCK_TTL_MS;
+}

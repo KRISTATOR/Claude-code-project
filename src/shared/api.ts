@@ -8,6 +8,27 @@ export interface AppInfo {
   isPackaged: boolean;
   /** True when the Supabase connection was baked in at build time. */
   configFromBuild: boolean;
+  /** Computer name, shown on file locks ("Kvido – NOTEBOOK-KVIDO"). */
+  machine: string;
+}
+
+export type OpenResult = { ok: true } | { ok: false; error: 'no-app' | 'io'; message: string };
+
+export type FinishResult = { changed: false } | { changed: true; sha: string };
+
+export type OfficeEvent =
+  | { type: 'saved'; fileId: string; sessionId: string; sha: string }
+  | { type: 'closed'; fileId: string }
+  | { type: 'no-lock'; fileId: string };
+
+export interface OfficeSessionInfo {
+  fileId: string;
+  sessionId: string;
+  name: string;
+  /** The local copy differs from what was last uploaded. */
+  pendingChange: boolean;
+  watching: boolean;
+  lockPresent: boolean;
 }
 
 export type UpdateStatus =
@@ -56,6 +77,36 @@ export interface ZazemiApi {
   };
   dialogs: {
     saveFile(request: SaveFileRequest): Promise<SaveFileResult>;
+  };
+  /** Downloaded file versions, stored by their SHA-256 (docs/PLAN.md §2.3). */
+  blobs: {
+    has(sha: string): Promise<boolean>;
+    get(sha: string): Promise<Uint8Array | null>;
+    put(sha: string, data: Uint8Array): Promise<void>;
+    usage(): Promise<number>;
+  };
+  /** Open in Word/Excel/PowerPoint with check-out (docs/PLAN.md §2.6). */
+  office: {
+    openForEdit(request: {
+      fileId: string;
+      sessionId: string;
+      name: string;
+      sha: string;
+    }): Promise<OpenResult>;
+    openReadOnly(request: { fileId: string; name: string; sha: string }): Promise<OpenResult>;
+    readWorking(fileId: string): Promise<{ data: Uint8Array; sha: string } | null>;
+    markUploaded(fileId: string, sha: string): Promise<void>;
+    finish(fileId: string): Promise<FinishResult>;
+    discard(fileId: string): Promise<void>;
+    sessions(): Promise<OfficeSessionInfo[]>;
+    onEvent(listener: (event: OfficeEvent) => void): () => void;
+  };
+  /** Streaming .zip export for "Záloha". */
+  backup: {
+    begin(defaultName: string): Promise<string | null>;
+    add(token: string, path: string, data: Uint8Array): Promise<void>;
+    finish(token: string): Promise<string>;
+    abort(token: string): Promise<void>;
   };
   deepLinks: {
     /** An invite code from a zazemi://pozvanka/… link opened while running. */

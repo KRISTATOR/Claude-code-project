@@ -37,7 +37,18 @@ test('renderer is isolated from Node and served with a strict CSP', async () => 
   expect(exposure).toEqual({
     require: 'undefined',
     process: 'undefined',
-    api: ['app', 'config', 'deepLinks', 'dialogs', 'secureStore', 'shell', 'updates'],
+    api: [
+      'app',
+      'backup',
+      'blobs',
+      'config',
+      'deepLinks',
+      'dialogs',
+      'office',
+      'secureStore',
+      'shell',
+      'updates',
+    ],
   });
 
   const csp = await page.evaluate(async () => {

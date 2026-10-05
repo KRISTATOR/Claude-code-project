@@ -3,6 +3,51 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 0.2.0: Milestone 1b, the shared drive and Office (2026-10-05)
+
+**Database changes: run "Deploy database" (docs/SETUP.md, step 6) before
+installing this version.** It creates the private `files` Storage bucket.
+
+### Added
+- **Disk:** folders per team ("Společné"), world and game; upload files or
+  whole folders (the structure is kept), drag and drop, rename, move (folders
+  move with their contents), trash and restore, permanent delete.
+  "Sdíleno se mnou" lists files someone shared whose folder you cannot see.
+- **Previews** inside the app: Word (rendered to HTML), Excel (tables per
+  sheet), PDF (pages), images, plain text and Markdown (sanitized). PowerPoint
+  shows its embedded preview picture and the slide text.
+- **Open in Office with check-out:** the file is downloaded to its own
+  working folder and opened in the app registered for it (Word, Excel,
+  PowerPoint…). While it is open, others see "Upravuje Kvido" and can open a
+  read-only copy. Every save is uploaded; within one session it replaces the
+  session's version, so 30 × Ctrl+S is still one version ("Uložit jako verzi"
+  keeps an intermediate state). The lock is released when the Office lock file
+  disappears or on "Hotovo". Locks are refreshed every minute and expire after
+  10 minutes; any organizer can release a stale lock. A save after losing the
+  lock becomes a **conflict version**: nothing is overwritten. Sessions survive
+  a crash or restart.
+- **Version history** with who and when, open any version read-only, restore
+  (creates a new version), pin (never pruned).
+- **Search** (page "Hledání"): names and the text inside Word, Excel,
+  PowerPoint, PDF, text and Markdown files; ignores diacritics and matches word
+  beginnings ("Lipnov" finds "Lipnově"); works offline.
+- **New from template:** mark a Word or Excel file as a template; new files
+  from it fill {tym}, {svet}, {hra}, {datum}, {slozka}.
+- **Storage meter** in Settings with warnings at 70 % and 90 % of the Free
+  tier's 1 GB, and "Uklidit staré verze" (keep 30 days, then the newest 5,
+  plus pinned). Shows the size of this computer's file cache.
+- **Backup** is now a .zip: all records and the current version of every file.
+- Downloaded versions are cached on disk by content hash (each version is
+  downloaded once per computer); the cache stays under 2 GB.
+- Storage policies follow the file record's visibility through the same
+  access rule as everything else; 13 more RLS tests, including uploads into
+  other teams and conflict handling.
+- The local development stack now includes Supabase Storage, built from
+  source.
+
+### Fixed
+- Locks and file text were fetched by the sync engine but not stored.
+
 ## 0.1.0: Milestone 1a, accounts, secrecy and sync (2026-10-05)
 
 **Database changes: run "Deploy database" (docs/SETUP.md, step 6) before

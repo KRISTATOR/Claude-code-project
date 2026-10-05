@@ -33,3 +33,13 @@ describe('IPC input schemas', () => {
     expect(saveFileInput.safeParse({ ...base, defaultName: 'a/b.json' }).success).toBe(false);
   });
 });
+
+describe('backup entry paths', () => {
+  it('accepts relative paths and refuses escapes', async () => {
+    const { backupEntryInput } = await import('./ipc');
+    expect(backupEntryInput.safeParse('soubory/Hra/Dopis č. 12.docx').success).toBe(true);
+    for (const bad of ['../x', '/etc/passwd', 'C:\\x', 'a//b', 'a/../b', 'a\\..\\b']) {
+      expect(backupEntryInput.safeParse(bad).success, bad).toBe(false);
+    }
+  });
+});

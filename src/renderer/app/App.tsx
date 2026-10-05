@@ -9,6 +9,7 @@ import { notifyError } from '../components/notify';
 import { ThemeSwitch } from '../components/ThemeSwitch';
 import { UpdateBanner } from '../components/UpdateBanner';
 import { joinTeam } from '../data/repo';
+import { DriveProvider } from '../drive/context';
 import { AuthScreen } from './AuthScreen';
 import { BackendProvider, useBackend } from './backend';
 import { FirstRunScreen } from './FirstRunScreen';
@@ -150,9 +151,11 @@ function TeamGate() {
   }
   return (
     <TeamProvider team={team} me={me}>
-      <HashRouter>
-        <Shell />
-      </HashRouter>
+      <DriveProvider>
+        <HashRouter>
+          <Shell />
+        </HashRouter>
+      </DriveProvider>
       {pendingInvite && (
         <InvitePrompt
           code={pendingInvite}

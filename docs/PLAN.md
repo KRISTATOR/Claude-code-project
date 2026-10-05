@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0 and 1a are done; next is M1b.**
+Status: **approved 2026-10-05. Milestones 0, 1a and 1b are done; next is M2.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two

@@ -5,9 +5,10 @@ shared drive that opens files in the real Microsoft Office apps, plus LARP
 planning tools (characters, lore, timeline, prop documents, items, maps,
 logistics, live-game dashboard).
 
-> **Status: Milestone 0 (skeleton).** The app installs, updates itself and
-> shows a first-run screen. Sign-in, the drive and the tools arrive in later
-> milestones (see [`docs/PLAN.md`](docs/PLAN.md)).
+> **Status: Milestone 1b.** Accounts, teams and invites, the secrecy model,
+> offline read-only mode, and the shared drive with Office check-out, versions,
+> previews and search. The LARP tools arrive in later milestones (see
+> [`docs/PLAN.md`](docs/PLAN.md) and [`docs/CHANGELOG.md`](docs/CHANGELOG.md)).
 
 * **Plan, architecture, milestones:** [`docs/PLAN.md`](docs/PLAN.md)
 * **One-time setup (Supabase, GitHub):** [`docs/SETUP.md`](docs/SETUP.md)

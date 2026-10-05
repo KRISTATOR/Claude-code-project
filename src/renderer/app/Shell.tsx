@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import { spotlight } from '@mantine/spotlight';
 import {
+  IconFolders,
   IconHome,
   IconMap2,
   IconSearch,
@@ -27,8 +28,11 @@ import { StatusBanner } from '../components/StatusBanner';
 import { SyncBadge } from '../components/SyncBadge';
 import { ThemeSwitch } from '../components/ThemeSwitch';
 import { UpdateBanner } from '../components/UpdateBanner';
+import { DrivePage } from '../drive/DrivePage';
+import { EditingIndicator } from '../drive/EditingIndicator';
 import { HomePage } from './pages/HomePage';
 import { PeoplePage } from './pages/PeoplePage';
+import { SearchPage } from './pages/SearchPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TrashPage } from './pages/TrashPage';
 import { WorldsPage } from './pages/WorldsPage';
@@ -50,6 +54,8 @@ export function Shell() {
   const items: NavItem[] = [
     { to: '/', label: t('nav.home'), icon: <IconHome size={18} /> },
     { to: '/svety', label: t('nav.worlds'), icon: <IconMap2 size={18} /> },
+    { to: '/disk', label: t('nav.drive'), icon: <IconFolders size={18} /> },
+    { to: '/hledat', label: t('nav.searchPage'), icon: <IconSearch size={18} /> },
     { to: '/lide', label: t('nav.people'), icon: <IconUsers size={18} />, organizerOnly: true },
     { to: '/kos', label: t('nav.trash'), icon: <IconTrash size={18} />, organizerOnly: true },
     { to: '/nastaveni', label: t('nav.settings'), icon: <IconSettings size={18} /> },
@@ -77,6 +83,7 @@ export function Shell() {
             </UnstyledButton>
           </Group>
           <Group gap="md" wrap="nowrap">
+            <EditingIndicator />
             <SyncBadge />
             <ThemeSwitch />
           </Group>
@@ -125,6 +132,8 @@ export function Shell() {
           <Route path="/" element={<HomePage />} />
           <Route path="/svety" element={<WorldsPage />} />
           <Route path="/svety/:id" element={<WorldsPage />} />
+          <Route path="/disk" element={<DrivePage />} />
+          <Route path="/hledat" element={<SearchPage />} />
           <Route path="/lide" element={<PeoplePage />} />
           <Route path="/kos" element={<TrashPage />} />
           <Route path="/nastaveni" element={<SettingsPage />} />

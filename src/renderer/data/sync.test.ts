@@ -21,6 +21,8 @@ class FakeRemote implements Remote {
     record_access: [],
     record_people: [],
     record_links: [],
+    file_locks: [],
+    file_text: [],
   };
   failWith: RemoteError | null = null;
   calls: { table: SyncTable; options?: SelectOptions }[] = [];
@@ -270,5 +272,33 @@ describe('SyncEngine', () => {
     await Promise.all([first, second]);
     expect(await cache.records.count()).toBe(1);
     expect(await cache.people.count()).toBe(1);
+  });
+
+  it('keeps file locks and file text in step with the server', async () => {
+    const file = randomUUID();
+    const lock = {
+      file_id: file,
+      team_id: teamId,
+      user_id: me,
+      display_name: 'Kvido',
+      machine: 'NOTEBOOK',
+      session_id: randomUUID(),
+      acquired_at: at(clock),
+      heartbeat_at: at(clock),
+      updated_at: at(clock),
+    };
+    remote.visible.file_locks = [lock];
+    remote.visible.file_text = [
+      { file_id: file, team_id: teamId, version_id: null, text: 'Lipnov', updated_at: at(clock) },
+    ];
+    await engine.sync(teamId);
+    expect(await cache.locks.get(file)).toMatchObject({ display_name: 'Kvido' });
+    expect((await cache.fileText.get(file))?.text).toBe('Lipnov');
+
+    remote.visible.file_locks = [];
+    remote.visible.file_text = [];
+    await engine.sync(teamId, { reconcile: true });
+    expect(await cache.locks.count()).toBe(0);
+    expect(await cache.fileText.count()).toBe(0);
   });
 });

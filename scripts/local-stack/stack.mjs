@@ -3,7 +3,8 @@
  * A local "mini Supabase" for development and end-to-end tests where Docker
  * images are unavailable: real PostgreSQL + PostgREST + Supabase Auth (GoTrue)
  * behind a small gateway that mimics Supabase's URL layout and CORS.
- * Realtime and Edge Functions are not included; Storage arrives in M1b.
+ * Supabase Storage is built from source (git clone, pinned commit) and runs
+ * with its file backend. Realtime and Edge Functions are not included.
  *
  *   node scripts/local-stack/stack.mjs start   # foreground; Ctrl+C stops everything
  *   node scripts/local-stack/stack.mjs reset   # wipe the database
@@ -33,7 +34,9 @@ const BIN = process.env.ZAZEMI_STACK_BIN ?? join(STATE, 'bin');
 const PG_DIR = join(tmpdir(), 'zazemi-stack-pg');
 const PG_BIN = process.env.ZAZEMI_PG_BIN ?? '/usr/lib/postgresql/16/bin';
 const PORTS = { gateway: 54321, db: 54322, rest: 54330, auth: 54331, storage: 54332 };
-const VERSIONS = { postgrest: 'v13.0.4', auth: 'v2.178.0' };
+const VERSIONS = { postgrest: 'v13.0.4', auth: 'v2.178.0', storage: '307c5e3' };
+const STORAGE_DIR = join(STATE, 'storage');
+const STORAGE_FILES = join(tmpdir(), 'zazemi-stack-files');
 const isRoot = process.getuid?.() === 0;
 
 function log(message) {
@@ -46,6 +49,7 @@ function run(cmd, args, options = {}) {
     asPostgres ? 'runuser' : cmd,
     asPostgres ? ['-u', 'postgres', '--', cmd, ...args] : args,
     {
+      cwd: options.cwd,
       stdio: options.quiet ? 'pipe' : 'inherit',
       encoding: 'utf8',
       env: { ...process.env, ...options.env },
@@ -71,6 +75,20 @@ function ensureBinaries() {
     const url = `https://github.com/supabase/auth/releases/download/${VERSIONS.auth}/auth-${VERSIONS.auth}-x86.tar.gz`;
     run('sh', ['-c', `curl -sSL "${url}" | tar xz -C "${BIN}"`]);
   }
+}
+
+/** Supabase Storage needs Node >= 24 officially; it runs fine on 22 for our use. */
+function ensureStorage() {
+  if (existsSync(join(STORAGE_DIR, 'dist/start/server.js'))) return;
+  log('building Supabase Storage from source (one-off, ~2 minutes)');
+  rmSync(STORAGE_DIR, { recursive: true, force: true });
+  run('git', ['clone', '--quiet', 'https://github.com/supabase/storage.git', STORAGE_DIR]);
+  run('git', ['-C', STORAGE_DIR, 'checkout', '--quiet', VERSIONS.storage]);
+  const opts = { quiet: true, cwd: STORAGE_DIR };
+  run('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund', '--engine-strict=false'], opts);
+  run('npm', ['rebuild', 'fs-xattr'], opts);
+  run('node', ['./build.js'], opts);
+  run('npx', ['resolve-tspaths'], opts);
 }
 
 function base64url(value) {
@@ -248,6 +266,40 @@ function startAuth(secrets) {
   });
 }
 
+function startStorage(secrets) {
+  mkdirSync(STORAGE_FILES, { recursive: true });
+  return spawn('node', ['dist/start/server.js'], {
+    cwd: STORAGE_DIR,
+    stdio: ['ignore', 'ignore', 'pipe'],
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      NODE_ENV: 'production',
+      SERVER_HOST: '127.0.0.1',
+      SERVER_PORT: String(PORTS.storage),
+      SERVER_ADMIN_PORT: String(PORTS.storage + 1),
+      AUTH_JWT_SECRET: secrets.jwtSecret,
+      AUTH_JWT_ALGORITHM: 'HS256',
+      ANON_KEY: secrets.anonKey,
+      SERVICE_KEY: secrets.serviceKey,
+      DATABASE_URL: `postgres://postgres@127.0.0.1:${PORTS.db}/postgres`,
+      DB_INSTALL_ROLES: 'false',
+      DB_ANON_ROLE: 'anon',
+      DB_SERVICE_ROLE: 'service_role',
+      DB_AUTHENTICATED_ROLE: 'authenticated',
+      DB_SUPER_USER: 'postgres',
+      STORAGE_BACKEND: 'file',
+      FILE_STORAGE_BACKEND_PATH: STORAGE_FILES,
+      STORAGE_S3_BUCKET: 'local',
+      TENANT_ID: 'local',
+      REGION: 'local',
+      GLOBAL_S3_BUCKET: 'local',
+      UPLOAD_FILE_SIZE_LIMIT: String(50 * 1024 * 1024),
+      LOG_LEVEL: 'error',
+    },
+  });
+}
+
 function startRest(secrets) {
   return spawn(join(BIN, 'postgrest'), [], {
     stdio: ['ignore', 'ignore', 'pipe'],
@@ -336,6 +388,17 @@ async function start() {
   auth.stderr.on('data', (c) => process.stderr.write(`[auth] ${c}`));
   await waitFor(async () => (await fetch(`http://127.0.0.1:${PORTS.auth}/health`)).ok, 'auth');
 
+  ensureStorage();
+  const storage = startStorage(secrets);
+  children.push(storage);
+  storage.stderr.on('data', (c) => process.stderr.write(`[storage] ${c}`));
+  await waitFor(
+    async () => (await fetch(`http://127.0.0.1:${PORTS.storage}/status`)).ok,
+    'storage',
+    60000,
+  );
+  psql(null, { file: join(ROOT, 'scripts/local-stack/storage-grants.sql') });
+
   applyMigrations();
 
   const rest = startRest(secrets);
@@ -368,6 +431,7 @@ async function start() {
 
 function reset() {
   rmSync(PG_DIR, { recursive: true, force: true });
+  rmSync(STORAGE_FILES, { recursive: true, force: true });
   rmSync(join(STATE, 'env.json'), { force: true });
   log('database wiped');
 }

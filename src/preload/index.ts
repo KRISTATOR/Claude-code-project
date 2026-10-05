@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
-import type { UpdateStatus, ZazemiApi } from '../shared/api';
+import type { OfficeEvent, UpdateStatus, ZazemiApi } from '../shared/api';
 import { IPC } from '../shared/channels';
 
 const api: ZazemiApi = {
@@ -31,6 +31,32 @@ const api: ZazemiApi = {
   },
   dialogs: {
     saveFile: (request) => ipcRenderer.invoke(IPC.saveFile, request),
+  },
+  blobs: {
+    has: (sha) => ipcRenderer.invoke(IPC.blobHas, sha),
+    get: (sha) => ipcRenderer.invoke(IPC.blobGet, sha),
+    put: (sha, data) => ipcRenderer.invoke(IPC.blobPut, sha, data),
+    usage: () => ipcRenderer.invoke(IPC.blobUsage),
+  },
+  office: {
+    openForEdit: (request) => ipcRenderer.invoke(IPC.officeOpenEdit, request),
+    openReadOnly: (request) => ipcRenderer.invoke(IPC.officeOpenView, request),
+    readWorking: (fileId) => ipcRenderer.invoke(IPC.officeReadWorking, fileId),
+    markUploaded: (fileId, sha) => ipcRenderer.invoke(IPC.officeMarkUploaded, fileId, sha),
+    finish: (fileId) => ipcRenderer.invoke(IPC.officeFinish, fileId),
+    discard: (fileId) => ipcRenderer.invoke(IPC.officeDiscard, fileId),
+    sessions: () => ipcRenderer.invoke(IPC.officeSessions),
+    onEvent: (listener) => {
+      const handler = (_event: IpcRendererEvent, event: OfficeEvent) => listener(event);
+      ipcRenderer.on(IPC.officeEvent, handler);
+      return () => ipcRenderer.removeListener(IPC.officeEvent, handler);
+    },
+  },
+  backup: {
+    begin: (defaultName) => ipcRenderer.invoke(IPC.backupBegin, defaultName),
+    add: (token, path, data) => ipcRenderer.invoke(IPC.backupAdd, token, path, data),
+    finish: (token) => ipcRenderer.invoke(IPC.backupFinish, token),
+    abort: (token) => ipcRenderer.invoke(IPC.backupAbort, token),
   },
   deepLinks: {
     onInvite: (listener) => {

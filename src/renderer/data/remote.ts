@@ -11,7 +11,9 @@ export type SyncTable =
   | 'record_secrets'
   | 'record_access'
   | 'record_people'
-  | 'record_links';
+  | 'record_links'
+  | 'file_locks'
+  | 'file_text';
 
 export interface SelectOptions {
   /** Equality filter, e.g. team_id = X. */

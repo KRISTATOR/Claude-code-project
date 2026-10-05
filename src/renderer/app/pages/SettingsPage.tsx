@@ -1,6 +1,20 @@
-import { Button, Group, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core';
+import {
+  Alert,
+  Button,
+  Group,
+  Paper,
+  PasswordInput,
+  Progress,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
 import { modals } from '@mantine/modals';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { formatBytes } from '@core/format';
+import { fileKind, readData } from '@core/kinds';
+import { useDrive } from '../../drive/context';
 import { useTranslation } from 'react-i18next';
 import { backupFileName, buildBackup } from '@core/backup';
 import { errorMessage } from '../../components/errors';
@@ -18,6 +32,7 @@ export function SettingsPage() {
       <Title order={2}>{t('settings.title')}</Title>
       <Account />
       <Team />
+      <Storage />
       <Connection />
       <Section title={t('settings.appearance')}>
         <ThemeSwitch />
@@ -109,11 +124,18 @@ function Team() {
   const [name, setName] = useState(team.name);
   const [busy, setBusy] = useState(false);
 
+  const { files } = useDrive();
+  const [progress, setProgress] = useState<string | null>(null);
+
   async function exportBackup() {
     setBusy(true);
+    let token: string | null = null;
     try {
+      token = await window.zazemi.backup.begin(backupFileName(team.name, new Date(), 'zip'));
+      if (!token) return;
       const byTeam = <T extends { team_id: string }>(rows: T[]) =>
         rows.filter((row) => row.team_id === team.id);
+      const records = byTeam(await cache.records.toArray());
       const backup = buildBackup({
         appVersion: info.version,
         exportedAt: new Date(),
@@ -121,23 +143,39 @@ function Team() {
         tables: {
           people: byTeam(await cache.people.toArray()),
           team_members: byTeam(await cache.members.toArray()),
-          records: byTeam(await cache.records.toArray()),
+          records,
           record_secrets: byTeam(await cache.secrets.toArray()),
           record_access: byTeam(await cache.access.toArray()),
           record_people: byTeam(await cache.recordPeople.toArray()),
           record_links: byTeam(await cache.links.toArray()),
+          file_text: byTeam(await cache.fileText.toArray()),
         },
       });
-      const result = await window.zazemi.dialogs.saveFile({
-        defaultName: backupFileName(team.name, new Date()),
-        filters: [{ name: 'JSON', extensions: ['json'] }],
-        data: new TextEncoder().encode(JSON.stringify(backup, null, 2)),
-      });
-      if (result.saved) notifySuccess(t('settings.backupDone', { path: result.path }));
+      await window.zazemi.backup.add(
+        token,
+        'zazemi.json',
+        new TextEncoder().encode(JSON.stringify(backup, null, 2)),
+      );
+      // Current version of every file, stored by record id so names never collide.
+      const fileRecords = records.filter(
+        (row) => row.kind === 'file' && readData(fileKind, row).current_version_id,
+      );
+      let done = 0;
+      for (const record of fileRecords) {
+        setProgress(t('settings.backupProgress', { done, total: fileRecords.length }));
+        const { data } = await files.getBytes(record);
+        await window.zazemi.backup.add(token, `soubory/${record.id}`, data);
+        done += 1;
+      }
+      const path = await window.zazemi.backup.finish(token);
+      token = null;
+      notifySuccess(t('settings.backupDone', { path }));
     } catch (error) {
+      if (token) await window.zazemi.backup.abort(token);
       notifyError(errorMessage(t, error));
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   }
 
@@ -179,7 +217,96 @@ function Team() {
           >
             {t('settings.backupNow')}
           </Button>
+          {progress && (
+            <Text size="sm" c="dimmed">
+              {progress}
+            </Text>
+          )}
         </Stack>
+      )}
+    </Section>
+  );
+}
+
+/** Supabase Free tier: 1 GB of files (docs/PLAN.md §0). */
+const STORAGE_LIMIT = 1_000_000_000;
+
+function Storage() {
+  const { t } = useTranslation();
+  const { isOrganizer, canEdit } = useTeam();
+  const { files } = useDrive();
+  const [used, setUsed] = useState<number | null>(null);
+  const [cacheSize, setCacheSize] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [reload, setReload] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    void window.zazemi.blobs.usage().then((size) => {
+      if (!cancelled) setCacheSize(size);
+    });
+    if (isOrganizer) {
+      files.usage().then(
+        (bytes) => {
+          if (!cancelled) setUsed(bytes);
+        },
+        () => undefined,
+      );
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [files, isOrganizer, reload]);
+
+  async function prune() {
+    setBusy(true);
+    try {
+      const freed = await files.prune();
+      notifySuccess(t('storage.pruned', { size: formatBytes(freed) }));
+      setReload((n) => n + 1);
+    } catch (error) {
+      notifyError(errorMessage(t, error));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const percent = used === null ? 0 : Math.round((used / STORAGE_LIMIT) * 100);
+  return (
+    <Section title={t('storage.title')}>
+      {isOrganizer && used !== null && (
+        <Stack gap={4}>
+          <Text size="sm">
+            {t('storage.used', { used: formatBytes(used), limit: formatBytes(STORAGE_LIMIT) })}
+          </Text>
+          <Progress
+            value={Math.min(100, percent)}
+            color={percent >= 90 ? 'red' : percent >= 70 ? 'orange' : 'teal'}
+          />
+          {percent >= 70 && (
+            <Alert color={percent >= 90 ? 'red' : 'orange'} variant="light" p="xs">
+              <Text size="sm">{t('storage.warning', { percent })}</Text>
+            </Alert>
+          )}
+          <Text size="xs" c="dimmed">
+            {t('storage.hint')}
+          </Text>
+          <Button
+            w="fit-content"
+            size="xs"
+            variant="light"
+            loading={busy}
+            disabled={!canEdit}
+            onClick={() => void prune()}
+          >
+            {t('storage.prune')}
+          </Button>
+        </Stack>
+      )}
+      {cacheSize !== null && (
+        <Text size="xs" c="dimmed">
+          {t('storage.cache', { size: formatBytes(cacheSize) })}
+        </Text>
       )}
     </Section>
   );
