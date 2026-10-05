@@ -39,6 +39,7 @@ import { matchesQuery } from '@core/text';
 import { useTeam } from '../app/workspace';
 import { NONE, useAttachments, useGameRecords, usePeople, useRecords } from '../data/hooks';
 import { GameGate, StatusBadge, useRun } from './common';
+import { DiaryTab } from '../documents/DiaryTab';
 
 const SHEET_COLORS = { draft: 'gray', ready: 'blue', sent: 'teal' } as const;
 const COSTUME_COLORS = { todo: 'red', partial: 'orange', done: 'teal' } as const;
@@ -62,7 +63,13 @@ export function CharactersPage() {
   const { t } = useTranslation();
   const { isOrganizer } = useTeam();
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') === 'sablona' && isOrganizer ? 'template' : 'roster';
+  const requested = params.get('tab');
+  const tab =
+    isOrganizer && requested === 'sablona'
+      ? 'template'
+      : isOrganizer && requested === 'denik'
+        ? 'diary'
+        : 'roster';
   return (
     <GameGate>
       {(game) => (
@@ -72,18 +79,30 @@ export function CharactersPage() {
           </Title>
           <Tabs
             value={tab}
-            onChange={(value) => setParams(value === 'template' ? { tab: 'sablona' } : {})}
+            onChange={(value) =>
+              setParams(
+                value === 'template'
+                  ? { tab: 'sablona' }
+                  : value === 'diary'
+                    ? { tab: 'denik' }
+                    : {},
+              )
+            }
             keepMounted={false}
           >
             <Tabs.List>
               <Tabs.Tab value="roster">{t('characters.roster')}</Tabs.Tab>
               {isOrganizer && <Tabs.Tab value="template">{t('characters.template')}</Tabs.Tab>}
+              {isOrganizer && <Tabs.Tab value="diary">{t('diary.title')}</Tabs.Tab>}
             </Tabs.List>
             <Tabs.Panel value="roster" pt="md">
               <Roster game={game} />
             </Tabs.Panel>
             <Tabs.Panel value="template" pt="md">
               <TemplateEditor game={game} />
+            </Tabs.Panel>
+            <Tabs.Panel value="diary" pt="md">
+              <DiaryTab game={game} />
             </Tabs.Panel>
           </Tabs>
         </Stack>

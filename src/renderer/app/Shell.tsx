@@ -15,6 +15,13 @@ import {
 } from '@mantine/core';
 import { spotlight } from '@mantine/spotlight';
 import {
+  IconArchive,
+  IconFiles,
+  IconFileText,
+  IconForms,
+  IconPrinter,
+  IconSignRight,
+  IconWriting,
   IconBook,
   IconBook2,
   IconBooks,
@@ -59,6 +66,12 @@ import { NpcsPage } from '../tools/NpcsPage';
 import { PhasesPage } from '../tools/PhasesPage';
 import { RelationshipsPage } from '../tools/RelationshipsPage';
 import { SchedulePage } from '../tools/SchedulePage';
+import { ArchivePage } from '../documents/ArchivePage';
+import { DocumentsPage } from '../documents/DocumentsPage';
+import { FormsPage } from '../documents/FormsPage';
+import { PrintQueuePage } from '../documents/PrintQueuePage';
+import { SignsPage } from '../documents/SignsPage';
+import { WritersPage } from '../documents/WritersPage';
 import { CanonPage } from '../lore/CanonPage';
 import { ConsistencyPage } from '../lore/ConsistencyPage';
 import { HistoryPage } from '../lore/HistoryPage';
@@ -148,6 +161,39 @@ export function Shell() {
       organizerOnly: true,
     },
   ];
+  const printing: NavItem[] = [
+    {
+      to: '/dokumenty',
+      label: t('nav.documents'),
+      icon: <IconFileText size={18} />,
+      organizerOnly: true,
+    },
+    {
+      to: '/pisatele',
+      label: t('nav.writers'),
+      icon: <IconWriting size={18} />,
+      organizerOnly: true,
+    },
+    { to: '/formulare', label: t('nav.forms'), icon: <IconForms size={18} />, organizerOnly: true },
+    {
+      to: '/cedule',
+      label: t('nav.signs'),
+      icon: <IconSignRight size={18} />,
+      organizerOnly: true,
+    },
+    {
+      to: '/archiv',
+      label: t('nav.archive'),
+      icon: <IconArchive size={18} />,
+      organizerOnly: true,
+    },
+    {
+      to: '/tisk',
+      label: t('nav.printQueue'),
+      icon: <IconPrinter size={18} />,
+      organizerOnly: true,
+    },
+  ];
   const teamItems: NavItem[] = [
     { to: '/lide', label: t('nav.people'), icon: <IconUsers size={18} />, organizerOnly: true },
     { to: '/kos', label: t('nav.trash'), icon: <IconTrash size={18} />, organizerOnly: true },
@@ -228,6 +274,18 @@ export function Shell() {
             >
               {allowed(story).map(link)}
             </NavLink>
+            {isOrganizer && (
+              <NavLink
+                label={t('nav.printing')}
+                leftSection={<IconFiles size={18} />}
+                py={6}
+                defaultOpened={printing.some((item) => location.pathname.startsWith(item.to))}
+                childrenOffset={12}
+                data-testid="nav-printing"
+              >
+                {allowed(printing).map(link)}
+              </NavLink>
+            )}
             <Divider my={4} />
             {allowed(teamItems).map(link)}
           </Stack>
@@ -282,6 +340,15 @@ export function Shell() {
           <Route path="/kanon" element={<CanonPage />} />
           <Route path="/problemy" element={<IssuesPage />} />
           <Route path="/kontrola" element={<ConsistencyPage />} />
+          <Route path="/dokumenty" element={<DocumentsPage />} />
+          <Route path="/dokumenty/:id" element={<DocumentsPage />} />
+          <Route path="/pisatele" element={<WritersPage />} />
+          <Route path="/pisatele/:id" element={<WritersPage />} />
+          <Route path="/formulare" element={<FormsPage />} />
+          <Route path="/formulare/:id" element={<FormsPage />} />
+          <Route path="/cedule" element={<SignsPage />} />
+          <Route path="/archiv" element={<ArchivePage />} />
+          <Route path="/tisk" element={<PrintQueuePage />} />
           <Route path="/lide" element={<PeoplePage />} />
           <Route path="/kos" element={<TrashPage />} />
           <Route path="/nastaveni" element={<SettingsPage />} />
@@ -289,7 +356,13 @@ export function Shell() {
         </Routes>
       </AppShell.Main>
       <CommandPalette
-        pages={[...allowed(general), ...allowed(game), ...allowed(story), ...allowed(teamItems)]}
+        pages={[
+          ...allowed(general),
+          ...allowed(game),
+          ...allowed(story),
+          ...allowed(printing),
+          ...allowed(teamItems),
+        ]}
       />
     </AppShell>
   );

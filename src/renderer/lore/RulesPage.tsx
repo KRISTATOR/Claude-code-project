@@ -29,12 +29,14 @@ import {
   type RuleSnapshotSection,
 } from '@core/kinds';
 import { compareSections, type DiffPart } from '@core/lore/diff';
+import { DEFAULT_LOOK, escapeHtml, richHtml, type PrintPiece } from '@core/print/html';
 import type { RecordRow, RecordSecretRow } from '@core/model';
 import { docText } from '@core/richtext';
 import { compareCzech } from '@core/text';
 import { formatDateTime } from '@core/format';
 import { useTeam } from '../app/workspace';
 import { RichText } from '../components/RichText';
+import { ExportMenu } from '../print/components';
 import { VisibilityEditor } from '../components/VisibilityEditor';
 import { NONE, useRecords, useSecret, useTeamRecords } from '../data/hooks';
 import { GameGate, inScope, useAskName, useRun } from '../tools/common';
@@ -119,8 +121,48 @@ function Rulebook({ book }: { book: RecordRow }) {
     .filter((row) => row.kind === 'rulebook_version')
     .sort((a, b) => b.created_at.localeCompare(a.created_at));
 
+  /** The player-facing rulebook: chapters, safety and glossary, never the mechanics notes. */
+  const playerPdf = (): PrintPiece[] => {
+    const chapters = (type: 'rules' | 'safety') =>
+      sections
+        .filter((row) => readData(ruleSectionKind, row).type === type)
+        .map(
+          (row) =>
+            `<h2>${escapeHtml(row.title)}</h2>${richHtml(readData(ruleSectionKind, row).body)}`,
+        )
+        .join('');
+    const terms = glossary
+      .map(
+        (row) =>
+          `<tr><td><strong>${escapeHtml(row.title)}</strong></td><td>${escapeHtml(readData(glossaryTermKind, row).definition)}</td></tr>`,
+      )
+      .join('');
+    const safety = chapters('safety');
+    return [
+      {
+        size: 'A4',
+        look: DEFAULT_LOOK,
+        html: `<div style="text-align:center;padding-top:80mm"><h1 style="font-size:2.4em">${escapeHtml(book.title)}</h1></div>`,
+      },
+      {
+        size: 'A4',
+        look: DEFAULT_LOOK,
+        html: [
+          chapters('rules'),
+          safety ? `<h1>${escapeHtml(t('rules.tabs.safety'))}</h1>${safety}` : '',
+          terms
+            ? `<h1>${escapeHtml(t('rules.tabs.glossary'))}</h1><table class="list"><tbody>${terms}</tbody></table>`
+            : '',
+        ].join(''),
+      },
+    ];
+  };
+
   return (
     <Tabs defaultValue="rules" keepMounted={false}>
+      <Group justify="flex-end" mb="xs">
+        <ExportMenu title={book.title} pdf={playerPdf} />
+      </Group>
       <Tabs.List>
         <Tabs.Tab value="rules">{t('rules.tabs.rules')}</Tabs.Tab>
         <Tabs.Tab value="safety">{t('rules.tabs.safety')}</Tabs.Tab>

@@ -45,6 +45,7 @@ export const LINKABLE_KINDS = new Set([
   'rule_section',
   'glossary_term',
   'history_event',
+  'prop_document',
 ]);
 
 export interface LinkTarget {

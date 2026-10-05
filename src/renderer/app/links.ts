@@ -51,6 +51,21 @@ export function recordLink(
       return record.parent_id ? `/postavy/${record.parent_id}` : '/zapletky';
     case 'issue':
       return '/problemy';
+    case 'prop_document':
+      return `/dokumenty/${record.id}`;
+    case 'writer_profile':
+      return `/pisatele/${record.id}`;
+    case 'form_template':
+      return `/formulare/${record.id}`;
+    case 'location_sign':
+      return '/cedule';
+    case 'diary_design':
+      return '/postavy?tab=denik';
+    case 'archive':
+    case 'archive_part':
+      return '/archiv';
+    case 'print_job':
+      return '/tisk';
     case 'rulebook':
     case 'rule_section':
     case 'glossary_term':

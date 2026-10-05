@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDate } from '@core/format';
 import type { Scope } from '@core/files/tree';
 import { fileKind, readData } from '@core/kinds';
+import { characterFields } from '@core/print/merge';
 import { compareCzech } from '@core/text';
 import { useTeam, useWorkspace } from '../app/workspace';
 import { errorMessage } from '../components/errors';
@@ -35,7 +36,17 @@ export function TemplateDialog({
         .sort((a, b) => compareCzech(a.title, b.title)),
     [cache, team.id],
   );
+  const characters = useLiveQuery(
+    async () =>
+      scope.type === 'game'
+        ? (await cache.records.where('[team_id+kind]').equals([team.id, 'character']).toArray())
+            .filter((row) => row.deleted_at === null && row.game_id === scope.id)
+            .sort((a, b) => compareCzech(a.title, b.title))
+        : [],
+    [cache, team.id, scope],
+  );
   const [templateId, setTemplateId] = useState<string | null>(null);
+  const [characterId, setCharacterId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -48,7 +59,22 @@ export function TemplateDialog({
       const worldId = scope.type === 'world' ? scope.id : game?.world_id;
       const world = worldId ? await cache.records.get(worldId) : undefined;
       const { data } = await files.getBytes(template);
+      const character = characters?.find((row) => row.id === characterId);
+      const characterValues = character
+        ? characterFields(
+            character,
+            new Map(
+              (await cache.records.where('team_id').equals(team.id).toArray()).map((row) => [
+                row.id,
+                row,
+              ]),
+            ),
+            await cache.people.where('team_id').equals(team.id).toArray(),
+            await cache.recordPeople.where('team_id').equals(team.id).toArray(),
+          )
+        : {};
       const filled = await fillTemplate(template.title, data, {
+        ...characterValues,
         tym: team.name,
         svet: world?.title ?? '',
         hra: game?.title ?? '',
@@ -95,6 +121,17 @@ export function TemplateDialog({
               value={name}
               onChange={(event) => setName(event.currentTarget.value)}
             />
+            {characters && characters.length > 0 && (
+              <Select
+                label={t('drive.templateCharacter')}
+                description={t('drive.templateCharacterHint')}
+                data={characters.map((row) => ({ value: row.id, label: row.title }))}
+                value={characterId}
+                onChange={setCharacterId}
+                searchable
+                clearable
+              />
+            )}
             <Text size="xs" c="dimmed">
               {t('drive.templateHint')}
             </Text>

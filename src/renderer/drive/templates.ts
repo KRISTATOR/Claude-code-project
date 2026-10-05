@@ -1,9 +1,12 @@
 import { extensionOf } from '@core/files/names';
 
-export type TemplateValues = Record<'tym' | 'svet' | 'hra' | 'datum' | 'slozka', string>;
+export type TemplateValues = Record<'tym' | 'svet' | 'hra' | 'datum' | 'slozka', string> &
+  Record<string, string>;
 
 /**
- * Fills {tym}, {svet}, {hra}, {datum}, {slozka} in Word and Excel templates.
+ * Fills {tym}, {svet}, {hra}, {datum}, {slozka} – and, when a character is
+ * chosen, {jmeno}, {hrac}, {funkce}, {dum}, {skupiny}… – in Word and Excel
+ * templates.
  * Other file types are copied as they are. Unknown tags are left empty.
  */
 export async function fillTemplate(
@@ -35,8 +38,8 @@ export async function fillTemplate(
         row.eachCell((cell) => {
           if (typeof cell.value === 'string') {
             cell.value = cell.value.replace(
-              /\{(tym|svet|hra|datum|slozka)\}/g,
-              (_match, key: keyof TemplateValues) => values[key],
+              /\{([a-z]+)\}/g,
+              (match, key: string) => values[key] ?? match,
             );
           }
         });

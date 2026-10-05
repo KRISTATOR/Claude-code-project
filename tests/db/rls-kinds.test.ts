@@ -31,8 +31,24 @@ const gameKinds = [
   'rule_section',
   'glossary_term',
   'rulebook_version',
+  // M4
+  'prop_document',
+  'form_template',
+  'location_sign',
+  'diary_design',
+  'archive',
+  'archive_part',
+  'print_job',
 ];
-const worldKinds = ['definition', 'faction', 'page', 'history_event', 'canon_entry', 'rulebook'];
+const worldKinds = [
+  'definition',
+  'faction',
+  'page',
+  'history_event',
+  'canon_entry',
+  'rulebook',
+  'writer_profile',
+];
 /** Kinds a person is attached to (rule R4) and how. */
 const attachable: Record<string, 'player' | 'actor'> = { character: 'player', npc: 'actor' };
 

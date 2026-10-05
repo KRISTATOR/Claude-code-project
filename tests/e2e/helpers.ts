@@ -5,8 +5,17 @@ import { connect, signUp, uniqueEmail, type LaunchedApp, type StackEnv } from '.
 export async function go(page: Page, label: string): Promise<void> {
   const nav = page.getByRole('navigation');
   const item = nav.getByText(label, { exact: true });
-  if (!(await item.isVisible())) {
-    await nav.getByText('Příběh', { exact: true }).click();
+  for (const group of ['Příběh', 'Tisk']) {
+    if (await item.isVisible()) break;
+    const header = nav.getByText(group, { exact: true });
+    if (!(await header.isVisible())) continue;
+    await header.click();
+    // Groups open with an animation; close it again if the item is not inside.
+    const found = await item
+      .waitFor({ state: 'visible', timeout: 1500 })
+      .then(() => true)
+      .catch(() => false);
+    if (!found) await header.click();
   }
   await item.click();
 }

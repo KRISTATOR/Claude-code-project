@@ -20,7 +20,9 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 import { questKind, questStatuses, questTypes, readData, readSecret } from '@core/kinds';
 import type { RecordRow } from '@core/model';
+import { escapeHtml, textHtml, type PrintPiece } from '@core/print/html';
 import { useTeam } from '../app/workspace';
+import { ExportMenu } from '../print/components';
 import { useLinkTargets } from '../components/RichText';
 import { VisibilityEditor } from '../components/VisibilityEditor';
 import { NONE, useGameRecords, useSecret } from '../data/hooks';
@@ -140,6 +142,27 @@ function Quests({ game }: { game: RecordRow }) {
   );
 }
 
+/** The in-world notice for the job board (A5). */
+function questNotice(
+  title: string,
+  fields: { description: string; conditions: string; reward: string },
+  giver: string,
+): PrintPiece {
+  return {
+    size: 'A5',
+    look: { fontId: 'grenze-gotisch', ink: '#2a1a0a', paper: 'aged', sizePt: 14 },
+    html: [
+      `<h1 style="text-align:center">${escapeHtml(title)}</h1>`,
+      textHtml(fields.description),
+      fields.conditions ? `<p><em>${escapeHtml(fields.conditions)}</em></p>` : '',
+      fields.reward
+        ? `<p style="text-align:center;font-size:1.3em"><strong>${escapeHtml(fields.reward)}</strong></p>`
+        : '',
+      giver ? `<div class="signature">${escapeHtml(giver)}</div>` : '',
+    ].join(''),
+  };
+}
+
 function QuestDialog({
   game,
   record,
@@ -164,6 +187,8 @@ function QuestDialog({
   const [secretText, setSecretText] = useState<string | null>(null);
   const set = <K extends keyof typeof fields>(key: K, value: (typeof fields)[K]) =>
     setFields((current) => ({ ...current, [key]: value }));
+  const giverName =
+    targets.find((target) => target.id === fields.giver_id)?.title ?? fields.giver_name;
 
   async function save() {
     const ok = await run(async () => {
@@ -245,6 +270,11 @@ function QuestDialog({
             onChange={(event) => set('reward', event.currentTarget.value)}
           />
         </Group>
+        <TextInput
+          label={t('quests.conditions')}
+          value={fields.conditions}
+          onChange={(event) => set('conditions', event.currentTarget.value)}
+        />
         <Group grow>
           <Select
             label={t('runOfShow.phase')}
@@ -273,6 +303,15 @@ function QuestDialog({
           />
         )}
         {record && isOrganizer && <VisibilityEditor record={record} />}
+        <Group>
+          <ExportMenu
+            title={title || t('kinds.quest')}
+            pdf={() => [questNotice(title, fields, giverName)]}
+          />
+          <Text size="xs" c="dimmed">
+            {t('quests.noticeHint')}
+          </Text>
+        </Group>
         <Group justify="space-between">
           {record ? (
             <ActionIcon
