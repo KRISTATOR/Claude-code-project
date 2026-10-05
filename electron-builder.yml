@@ -1,0 +1,68 @@
+# electron-builder configuration. Docs: https://www.electron.build/
+appId: cz.chynickylarp.zazemi
+productName: Zázemí
+# ASCII file names on disk (CLAUDE.md, Electron conventions).
+executableName: Zazemi
+copyright: Chýnický LARP
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+
+asar: true
+
+# Registered now so invite links (zazemi://pozvanka/CODE) work from Milestone 1a.
+protocols:
+  - name: Zázemí
+    schemes:
+      - zazemi
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  # ---------------------------------------------------------------------------
+  # CODE SIGNING (not set up yet – we have no certificate).
+  # Without a signature Windows SmartScreen warns on first install; see
+  # README.md. To sign later, add ONE of these and the matching secrets in
+  # .github/workflows/release.yml:
+  #
+  #   Azure Trusted Signing:
+  #   azureSignOptions:
+  #     publisherName: "Chýnický LARP"
+  #     endpoint: https://weu.codesigning.azure.net
+  #     codeSigningAccountName: <account>
+  #     certificateProfileName: <profile>
+  #
+  #   Classic certificate (.pfx): set CSC_LINK and CSC_KEY_PASSWORD in CI;
+  #   electron-builder picks them up automatically, no change needed here.
+  # ---------------------------------------------------------------------------
+
+nsis:
+  artifactName: Zazemi-Setup-${version}.${ext}
+  # Per-user install into %LOCALAPPDATA%\Programs: no administrator rights.
+  oneClick: true
+  perMachine: false
+  shortcutName: Zázemí
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  # Keep the user's local cache and working files when uninstalling.
+  deleteAppDataOnUninstall: false
+  installerLanguages:
+    - cs_CZ
+  language: '1029'
+
+# Auto-update metadata (latest.yml) points at the public releases repo, so
+# players can update without a GitHub token in the app.
+publish:
+  provider: github
+  owner: kristator
+  repo: zazemi-releases
+  releaseType: release

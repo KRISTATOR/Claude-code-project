@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Zázemí: the organizers' backstage tent. Placeholder icon, free to replace. -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="#0b7a5c"/>
+  <path d="M256 96 L440 400 H72 Z" fill="#f4efe1"/>
+  <path d="M256 96 L256 400" stroke="#0b7a5c" stroke-width="14"/>
+  <path d="M256 236 L316 400 H196 Z" fill="#0b7a5c"/>
+  <path d="M236 96 L256 60 L276 96" fill="none" stroke="#f4efe1" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="56" y="396" width="400" height="18" rx="9" fill="#f4efe1"/>
+</svg>

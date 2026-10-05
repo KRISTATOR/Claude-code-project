@@ -4,7 +4,16 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['out/**', 'dist/**', 'release/**', 'node_modules/**', 'playwright-report/**', 'test-results/**'] },
+  {
+    ignores: [
+      'out/**',
+      'dist/**',
+      'release/**',
+      'node_modules/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   {
@@ -40,7 +49,10 @@ export default tseslint.config(
         'error',
         {
           patterns: [
-            { group: ['electron', 'react', 'react-dom', '@supabase/*', '@mantine/*'], message: 'src/core must stay pure.' },
+            {
+              group: ['electron', 'react', 'react-dom', '@supabase/*', '@mantine/*'],
+              message: 'src/core must stay pure.',
+            },
           ],
         },
       ],

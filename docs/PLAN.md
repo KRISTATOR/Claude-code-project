@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **draft for review, before Milestone 0.** Nothing below is built yet.
+Status: **approved 2026-10-05. Milestone 0 is done; next is M1a.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -755,19 +755,20 @@ Each milestone ends with a stop for your review.
 
 ## 8. Risks and open questions
 
-**Questions for you:**
+**Questions for you.** The owner said "go" without answering these, so the
+plan proceeds on the defaults shown in brackets until told otherwise.
 
-1. **When is your next game?** If it comes before roughly M5, I'd pull
+1. **When is your next game?** [unknown: milestone order as planned] If it comes before roughly M5, I'd pull
    forward printing (M4) and the live dashboard's offline core (M7) and push
    maps and logistics later.
-2. **Who should "Všichni" (everyone) mean?** I've assumed every team member.
+2. **Who should "Všichni" (everyone) mean?** [every team member]
    The alternative is the participants of that game. With "every member", a
    person who only played game A would also see a public announcement of
    game B.
-3. **Should players be able to edit anything in v1?** For example their own
+3. **Should players be able to edit anything in v1?** [no] For example their own
    costume notes or "what I'm bringing". The plan assumes not (§1, item 8).
 4. **Is `kristator/zazemi-releases` the right name** for the public releases
-   repo?
+   repo? [yes]
 
 **Risks:**
 

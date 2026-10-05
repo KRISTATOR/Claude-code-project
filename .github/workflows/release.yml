@@ -1,0 +1,108 @@
+name: Release
+
+# Builds the Windows installer on a real Windows machine.
+#  - Push a tag like v0.1.0  -> installer attached to a GitHub Release in this repo,
+#                               and published to the public releases repo if
+#                               RELEASES_TOKEN is set (needed for auto-update).
+#  - "Run workflow" by hand  -> installer uploaded as a workflow artifact only.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RELEASES_REPO: kristator/zazemi-releases
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check tag matches package.json version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version ${version}"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint, typecheck, unit tests
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
+
+      - name: End-to-end tests on Windows
+        run: |
+          npm run build:test
+          npm run test:e2e
+
+      - name: Build installer
+        env:
+          # Only the project URL and the anon/publishable key may be baked in
+          # (repository *variables*, not secrets – they are public anyway).
+          ZAZEMI_SUPABASE_URL: ${{ vars.ZAZEMI_SUPABASE_URL }}
+          ZAZEMI_SUPABASE_ANON_KEY: ${{ vars.ZAZEMI_SUPABASE_ANON_KEY }}
+          # -------------------------------------------------------------------
+          # CODE SIGNING (not set up yet). When we have a certificate, add the
+          # secrets here, for example:
+          #   CSC_LINK: ${{ secrets.WIN_CSC_LINK }}             # base64 .pfx
+          #   CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          # or the AZURE_* variables for Azure Trusted Signing, and see the
+          # CODE SIGNING block in electron-builder.yml.
+          # -------------------------------------------------------------------
+        run: |
+          npm run build
+          npx electron-builder --win nsis --x64 --publish never
+
+      - name: Upload installer as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zazemi-Setup
+          path: |
+            release/Zazemi-Setup-*.exe
+            release/Zazemi-Setup-*.exe.blockmap
+            release/latest.yml
+          retention-days: 30
+
+      - name: Attach to GitHub Release in this repo
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --title "Zázemí $GITHUB_REF_NAME" --generate-notes
+          gh release upload "$GITHUB_REF_NAME" release/Zazemi-Setup-*.exe release/Zazemi-Setup-*.exe.blockmap release/latest.yml --clobber
+
+      - name: Publish to the public releases repo (auto-update)
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::warning::RELEASES_TOKEN is not set – skipping $RELEASES_REPO. Auto-update will not see this version (docs/SETUP.md, step 2)."
+            exit 0
+          fi
+          gh release view "$GITHUB_REF_NAME" --repo "$RELEASES_REPO" >/dev/null 2>&1 \
+            || gh release create "$GITHUB_REF_NAME" --repo "$RELEASES_REPO" --title "Zázemí $GITHUB_REF_NAME" \
+                 --notes "Instalátor aplikace Zázemí. Stáhněte Zazemi-Setup-*.exe a spusťte ho."
+          gh release upload "$GITHUB_REF_NAME" --repo "$RELEASES_REPO" \
+            release/Zazemi-Setup-*.exe release/Zazemi-Setup-*.exe.blockmap release/latest.yml --clobber

@@ -99,18 +99,25 @@ changes.
 
 ## Commands
 
-These become available in Milestone 0.
-
 ```bash
 npm install            # install dependencies
 npm run dev            # run the app in development (electron-vite)
-npm run lint           # ESLint
-npm run typecheck      # tsc --noEmit for main, preload, renderer, core
-npm test               # Vitest: unit tests + RLS tests on PGlite
-npm run test:e2e       # Playwright + Electron (needs `npm run build`; on Linux use xvfb-run)
-npm run build          # electron-vite production build
-npm run dist:win       # electron-builder NSIS installer (Windows / CI only)
+npm run lint           # ESLint (type-aware)
+npm run typecheck      # tsc --noEmit for node (main, preload, core, tests) and web (renderer)
+npm run format:check   # Prettier (run `npm run format` to fix)
+npm test               # Vitest: unit tests (+ RLS tests on PGlite from M1a)
+npm run build          # electron-vite production build -> out/
+npm run build:test     # same, with ZAZEMI_TEST_BUILD=1 (test hooks compiled in)
+npm run test:e2e       # Playwright + Electron; needs `npm run build:test` first; on Linux: xvfb-run -a
+npm run dist:win       # NSIS installer (Windows / CI only)
+npm run dist:dir       # unpacked build for the current OS (quick packaging check)
 ```
+
+Layout: `src/main` (Electron main), `src/preload` (bridge), `src/shared` (IPC
+contract: `channels.ts` has no imports so the preload stays tiny; `ipc.ts` has
+the zod schemas), `src/core` (pure logic), `src/renderer` (React UI).
+Release workflow: `.github/workflows/release.yml`; installer config:
+`electron-builder.yml`.
 
 ### Sandbox notes (Linux development container)
 
@@ -119,6 +126,11 @@ npm run dist:win       # electron-builder NSIS installer (Windows / CI only)
 * There's no Docker daemon, so RLS tests run on PGlite. CI also runs them
   against real Supabase Postgres.
 * Xvfb is available for end-to-end tests: `xvfb-run -a npm run test:e2e`.
+* Playwright's own browsers are not installed (Electron tests don't need
+  them). For ad-hoc Chromium use `executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.
+* `electron-builder --win` gets as far as NSIS packaging and then needs Wine,
+  which isn't installed. `npm run dist:dir` (Linux unpacked) works for a quick
+  packaging check.
 * Windows and Office can't be run here. The Windows runner in CI builds the
   installer, and the owner tests by hand.
 
