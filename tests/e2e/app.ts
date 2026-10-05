@@ -1,7 +1,12 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { _electron as electron, expect, type ElectronApplication, type Page } from '@playwright/test';
+import {
+  _electron as electron,
+  expect,
+  type ElectronApplication,
+  type Page,
+} from '@playwright/test';
 import { encodeConnectionCode } from '../../src/core/connection';
 
 export interface LaunchedApp {
@@ -72,7 +77,11 @@ export function uniqueEmail(label: string): string {
   return `${label}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
 }
 
-export async function signUp(page: Page, email: string, password = 'heslo-pro-test'): Promise<void> {
+export async function signUp(
+  page: Page,
+  email: string,
+  password = 'heslo-pro-test',
+): Promise<void> {
   await page.getByRole('tab', { name: 'Nový účet' }).click();
   await page.getByLabel('E-mail').fill(email);
   await page.locator('input[type=password]').fill(password);
@@ -80,7 +89,11 @@ export async function signUp(page: Page, email: string, password = 'heslo-pro-te
   await expect(page.getByRole('heading', { name: 'Vítejte v Zázemí' })).toBeVisible();
 }
 
-export async function signIn(page: Page, email: string, password = 'heslo-pro-test'): Promise<void> {
+export async function signIn(
+  page: Page,
+  email: string,
+  password = 'heslo-pro-test',
+): Promise<void> {
   await page.getByLabel('E-mail').fill(email);
   await page.locator('input[type=password]').fill(password);
   await page.getByRole('button', { name: 'Přihlásit se', exact: true }).click();

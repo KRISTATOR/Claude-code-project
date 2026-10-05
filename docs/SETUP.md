@@ -11,6 +11,8 @@ in order as we go.
 | 3. Supabase project | M1a | 10 min |
 | 4. Connect the app builds to Supabase | M1a | 3 min |
 | 5. Cutting a release | every milestone | 2 min |
+| 6. Deploying the database | M1a, then after schema changes | 10 min once, 1 min after |
+| 7. The first organizer account | M1a | 2 min |
 
 ---
 
@@ -89,9 +91,7 @@ Release builds made after this step connect automatically. Builds without
 these variables show the first-run screen, where someone can paste a
 connection code instead.
 
-Milestone 1a will add one more step here: applying the database schema with a
-"Deploy database" workflow you start by hand (it needs a Supabase access
-token and the database password as GitHub secrets).
+Step 6 applies the database schema; the app shows errors until it is done.
 
 ## 5. Cutting a release
 
@@ -123,3 +123,51 @@ a release.
 A private repo on a free GitHub account gets 2,000 Actions minutes a month,
 and Windows minutes count double. A release uses about 10 billed minutes; the
 Linux checks on each push use about 5. That's comfortable at our pace.
+
+## 6. Deploying the database
+
+The tables, security rules and the one Edge Function live in this repo
+(`supabase/`). A GitHub workflow copies them to your Supabase project. It runs
+only when you start it, so schema changes are always deliberate.
+
+**Once:**
+
+1. In Supabase, open your avatar → **Account preferences** → **Access Tokens**
+   (<https://supabase.com/dashboard/account/tokens>) → **Generate new token**.
+   Name it `zazemi-deploy` and copy it.
+2. In this GitHub repo → **Settings** → **Secrets and variables** → **Actions**:
+   * **Secrets** tab → **New repository secret** → `SUPABASE_ACCESS_TOKEN` = the token;
+   * **Secrets** tab → **New repository secret** → `SUPABASE_DB_PASSWORD` = the
+     database password from step 3;
+   * **Variables** tab → **New repository variable** → `SUPABASE_PROJECT_REF` =
+     the project's reference ID: the `xxxxxxxx` part of
+     `https://xxxxxxxx.supabase.co` (also shown in Project Settings → General).
+
+**Each time Claude says the database changed** (the changelog says so too):
+
+1. **Actions** → **Deploy database** → **Run workflow**. Tick *Only show
+   what would change* first if you want to look before applying.
+2. Wait for the green tick (about a minute).
+
+Deploy the database **before** installing a new app version that needs it.
+Migrations are written so that the previous app version keeps working.
+
+## 7. The first organizer account
+
+1. Install and open the app. If the release was built after step 4, it
+   connects automatically; otherwise paste the connection code (below).
+2. **Nový účet** → your e-mail and a password (at least 8 characters).
+3. Type your name, then under **Zakládám tým** the team name, e.g.
+   *Chýnický LARP* → **Založit tým**. You are its first organizer.
+4. Invite the others: **Lidé** → **Pozvánky** → choose the role → **Vytvořit
+   pozvánku**, and send them the code. A code works once by default; for a
+   group of players, raise *Počet použití*.
+
+**Connection code** (only needed for builds without step 4): it is
+`zazemi1:` followed by the URL and key, encoded. Organizers can generate it
+once the app has a settings screen for it; until then, use the manual entry
+("Zadat adresu a klíč ručně") on the first screen.
+
+**Forgotten passwords:** an organizer opens **Lidé** → **Členové**, clicks
+the key icon next to the person and sets a temporary password. (This uses the
+`admin-set-password` Edge Function from step 6.)

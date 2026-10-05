@@ -11,8 +11,9 @@ changes.
 
 ## Workflow
 
-* Work one milestone at a time (see `docs/PLAN.md` §7) and **stop for the
-  owner's review after each one**.
+* Work one milestone at a time (see `docs/PLAN.md` §7). Since 2026-10-05 the
+  owner asked to **continue to the next milestone without waiting** once a
+  milestone is finished and tested (local checks and CI green).
 * A milestone is done when tests pass, CI is green, `docs/CHANGELOG.md` is
   updated, and there's a short list of things the owner should try by hand
   on Windows.
@@ -101,6 +102,7 @@ changes.
 
 ```bash
 npm install            # install dependencies
+npm run check          # format, lint, typecheck, unit + RLS tests – run before every commit
 npm run dev            # run the app in development (electron-vite)
 npm run lint           # ESLint (type-aware)
 npm run typecheck      # tsc --noEmit for node (main, preload, core, tests) and web (renderer)
@@ -111,7 +113,13 @@ npm run build:test     # same, with ZAZEMI_TEST_BUILD=1 (test hooks compiled in)
 npm run test:e2e       # Playwright + Electron; needs `npm run build:test` first; on Linux: xvfb-run -a
 npm run dist:win       # NSIS installer (Windows / CI only)
 npm run dist:dir       # unpacked build for the current OS (quick packaging check)
+npm run test:db        # only the RLS tests; ZAZEMI_TEST_DB_URL=postgres://… runs them on real Postgres
+npm run stack          # local Supabase-like stack (foreground); `npm run stack:reset` wipes it
 ```
+
+End-to-end tests that need a backend (`tests/e2e/team.spec.ts`) run against
+the local stack when `.local-stack/env.json` exists, against
+`ZAZEMI_E2E_SUPABASE_URL`/`_ANON_KEY` in CI, and are skipped otherwise.
 
 Layout: `src/main` (Electron main), `src/preload` (bridge), `src/shared` (IPC
 contract: `channels.ts` has no imports so the preload stays tiny; `ipc.ts` has
@@ -123,8 +131,12 @@ Release workflow: `.github/workflows/release.yml`; installer config:
 
 * `supabase.com` is blocked by the egress proxy, but the npm registry and
   GitHub release downloads work. Electron's binary download works too.
-* There's no Docker daemon, so RLS tests run on PGlite. CI also runs them
-  against real Supabase Postgres.
+* Docker can start (`dockerd &`) but cannot pull image layers through the
+  proxy, so the Supabase CLI stack does not work here. Use the local stack
+  instead: `npm run stack` (Postgres 16 from the system, PostgREST and
+  Supabase Auth binaries from GitHub releases; no Realtime, no Edge Functions;
+  Storage from M1b). Run it in the background and wait for `ready`.
+  RLS tests: `ZAZEMI_TEST_DB_URL=postgres://postgres@127.0.0.1:54322/postgres npm run test:db`.
 * Xvfb is available for end-to-end tests: `xvfb-run -a npm run test:e2e`.
 * Playwright's own browsers are not installed (Electron tests don't need
   them). For ad-hoc Chromium use `executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'`.
@@ -148,3 +160,6 @@ Release workflow: `.github/workflows/release.yml`; installer config:
 | 2026-10-05 | No email dependency: password sign-in, invite codes, organizer-set temporary passwords through an Edge Function. |
 | 2026-10-05 | One file version per check-out session (Free tier storage). |
 | 2026-10-05 | Milestone 1 split into 1a (accounts, secrecy, sync) and 1b (drive, Office); auto-update in M0; folder import in M1b. |
+| 2026-10-05 | Owner: continue through milestones without waiting for review once each is tested. Open questions in PLAN §8 run on their defaults. |
+| 2026-10-05 | A record inside a hidden game or world is hidden too (container rule in `can_read_as`). |
+| 2026-10-05 | Sync reads disable postgrest-js retries; the engine re-syncs on a timer and on realtime pokes. |

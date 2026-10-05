@@ -1,7 +1,7 @@
 {
   "name": "zazemi",
   "productName": "Zázemí",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "Zázemí – pracovní prostor organizátorů Chýnického LARPu",
   "author": "Chýnický LARP",
@@ -27,7 +27,8 @@
     "dist:dir": "electron-vite build && electron-builder --dir --publish never",
     "test:db": "vitest run tests/db",
     "stack": "node scripts/local-stack/stack.mjs start",
-    "stack:reset": "node scripts/local-stack/stack.mjs reset"
+    "stack:reset": "node scripts/local-stack/stack.mjs reset",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
   },
   "dependencies": {
     "electron-updater": "^6.8.9",

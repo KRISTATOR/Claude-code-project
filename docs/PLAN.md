@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestone 0 is done; next is M1a.**
+Status: **approved 2026-10-05. Milestones 0 and 1a are done; next is M1b.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -234,6 +234,11 @@ idea. These are my proposals. Each one is easy to reverse if you disagree.
 
 **Writes:** organizers only (RLS), plus named server functions for the few
 things others may do (§1, item 8).
+
+**Containers:** a record inside a game or world that the person cannot see
+is hidden too, whatever its own visibility. Otherwise a secret sequel would
+leak through its public-looking contents. (Games and worlds are one or two
+levels, so this is cheap.)
 
 **Folders:** visibility is checked per item, not inherited at read time.
 Inherited checks are slow in RLS, and you'd be surprised when moving a file
