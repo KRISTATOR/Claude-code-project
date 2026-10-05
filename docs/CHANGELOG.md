@@ -3,6 +3,52 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 0.3.0: Milestone 2, characters (2026-10-05)
+
+No database changes: everything new is a record kind on the existing schema.
+
+### Added
+- **Current game** switcher in the sidebar; the new section "Hra" groups the
+  tools that work on one game. The choice is remembered per team.
+- **Characters** ("Postavy"): roster with player, function, groups and house
+  number, sorted by house; sheet and costume status editable in the table;
+  a warning dot for characters with too few relationships.
+- **Character sheet** built from the game's sheet template ("Šablona listu"):
+  sections can be added, renamed, reordered and given an audience: the
+  player, organizers only, or everyone. Organizer-only parts are stored in the
+  organizer-only table; public parts go into a separate public profile record.
+  The out-of-game warning header ("Neherní materiál – nesdílet") is
+  configurable. Ctrl+S saves.
+- **Groups** ("Skupiny"): factions, opinion groups, clans, nations and
+  religions per game or for the whole world, with customs, beliefs, laws,
+  vocabulary, organizer notes and members (a character can be in several).
+  Customs and vocabulary appear on members' sheets.
+- **Relationships** ("Vztahy"): a graph and a list; each relationship says
+  who knows about it (both sides, or only one). A player sees exactly the
+  relationships their side knows of; the other side's player does not.
+- **NPCs** ("CP"): a light sheet with rank, description, abilities, costume
+  and actors; bulk creation ("Voják {1-30}; vojín"); appearances with
+  situation, stats, actor, block, scene, time and preparation status. An
+  actor can read the appearances they play, not the rest of the NPC.
+- **NPC schedule** ("Harmonogram CP"): the table of all appearances and a
+  timeline per actor; overlapping appearances of one actor are flagged.
+- **Phases and blocks** (basic; the run-of-show follows in M3).
+- **Races, classes, professions and skills** per world ("Rasy a
+  dovednosti"), selectable on sheets.
+- **View as player** ("Zobrazit jako…" in Lidé, or on a character sheet):
+  the whole app shows exactly what that person can read, read-only, with a
+  banner. The list comes from the server's access rule, not from the client.
+- RLS tests for every new record kind (four checks each).
+
+### Fixed
+- A record that became visible without being edited (for example a
+  character after its player was attached) did not reach that person's
+  computer. The app now fetches newly visible records when someone's access
+  changes and on every reconcile.
+
+### Changed
+- Players no longer see the NPC pages in the navigation.
+
 ## 0.2.0: Milestone 1b, the shared drive and Office (2026-10-05)
 
 **Database changes: run "Deploy database" (docs/SETUP.md, step 6) before

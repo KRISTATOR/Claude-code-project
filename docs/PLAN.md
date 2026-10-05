@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0, 1a and 1b are done; next is M2.**
+Status: **approved 2026-10-05. Milestones 0, 1a, 1b and 2 are done; next is M3.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -686,6 +686,11 @@ Each milestone ends with a stop for your review.
   per actor, with clash detection.
 * Definitions per world: races, classes, professions, skills.
 * "Zobrazit jako hráč" (view as player).
+* As built: a sheet section's audience is the player, organizers or
+  everyone. Player parts live in the character's `data`, organizer parts in
+  `record_secrets`, public parts in a child `character_profile` record
+  (visibility `everyone`), so hard rule 4 holds. NPC pages are hidden from
+  players in the navigation.
 
 ### M3: Lore and time
 * Wiki pages and entity subtypes, `[[links]]` with autocomplete, backlinks,
