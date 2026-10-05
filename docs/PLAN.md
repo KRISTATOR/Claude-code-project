@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0 to 5 are done; next is M6.**
+Status: **approved 2026-10-05. Milestones 0 to 6 are done; next is M7.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -487,13 +487,16 @@ file_locks      file_id, team_id, user_id, display_name, machine, acquired_at, h
 file_text       file_id, team_id, version_id, text
 
 -- later: append-only tables, because they're logs rather than documents
-ledger_entries   (M5)  who gave what to whom, when
+ledger_entries   (M5)  as built: `transfer` records instead (see M5)
 event_log        (M7)  timestamped backstage log
 tracker_readings (M7)  value of a per-game tracked field for a character, over time
 
 -- personal data, deliberately kept out of `records`, search and exports (M6)
-registrations   id, team_id, game_id, person_id, status, consent_on_file, allergies,
-                emergency_contact, created_at   -- organizers + the person themselves
+registrations   id, team_id, game_id, person_id, character_id, name, status,
+                is_minor, consent_on_file, allergens text[], allergies,
+                emergency_contact, note, rev, created_at, updated_at
+                -- organizers + the person themselves (read); the person writes
+                -- only allergies and contact via update_my_registration()
 ```
 
 * **Worlds and games are records too** (kind `world` or `game`), because a
@@ -527,6 +530,7 @@ registrations   id, team_id, game_id, person_id, status, consent_on_file, allerg
 
 * **M1a:** `create_team`, `create_invite`, `join_team`, `visible_record_ids`, `record_readers`, `set_member_role`, `remove_member`. Edge Function: `admin-set-password`.
 * **M1b:** `checkout_file`, `heartbeat_lock`, `commit_file_version`, `release_lock`, `force_release_lock`, `restore_file_version`, `prune_versions`.
+* **M6:** `update_my_registration`.
 * **M7:** `mark_delivered`, `append_event`, `record_reading`. All idempotent, so the outbox can replay them.
 
 ---
@@ -768,6 +772,14 @@ Each milestone ends with a stop for your review.
   under-18s, emergency contact. Organizer-only, minimal, deletable, never in
   exports by default.
 * Feedback: import a post-game survey as a retrospective.
+
+* As built: registrations sync as a small table (replaced on every sync, so
+  hard deletes propagate) into their own IndexedDB store; they never enter
+  search or the default backup. Food quantities are per portion; units of
+  the same dimension convert (g/dkg/kg, ml/dl/l). A meal's alternative dishes
+  carry a share of the headcount; a person is flagged when a dish everyone
+  gets is unsafe for them, or when no alternative is. CSV import handles
+  quotes, a BOM, semicolons and Windows-1250.
 
 ### M7: Live game
 * Big-button dashboard: current phase and block, "next up", one-click

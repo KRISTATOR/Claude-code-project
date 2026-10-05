@@ -3,6 +3,53 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 0.7.0: Milestone 6, logistics (2026-10-05)
+
+Database: a new `registrations` table (migration `20261008090000`), with RLS
+and the server function `update_my_registration`. Expand-only, so 0.6.0 keeps
+working.
+
+### Added
+- **Přihlášky:** registrations per game, kept apart from all other records
+  because they are personal data. Only organizers see them all; each person
+  sees only their own. Import from a Google Forms CSV with a column mapping
+  that is guessed from the headers; only name, age (worked out from a birth
+  date, an age or a yes/no answer), allergies, emergency contact and a note
+  are stored. E-mails and timestamps are never read. People are matched to
+  the roster by name, existing registrations are skipped, and a repeated
+  answer replaces the earlier one. Status (přihlášen/a, potvrzeno,
+  zaplaceno, má postavu, zrušeno), the assigned character, under-18s with a
+  warning until the parents' consent is on file. Deleting is permanent.
+- **Moje přihláška:** players and NPC actors see their own registration and
+  can correct their allergies and emergency contact (through a server
+  function; they can't change anything else). A link to what they should
+  bring.
+- **Jídlo:** ingredients (unit, shop, price, package size, the 14 EU
+  allergens, meat or animal products), dishes per portion (g, kg, dl, l,
+  ks… converted automatically), and the menu by day and slot, tied to a
+  phase if wanted, with alternatives for part of the table. Each meal warns
+  about people who would have nothing to eat because of their allergies or
+  diet. The shopping list for any headcount (registrations by default) is
+  grouped by shop, rounded up to whole packages, with total and price per
+  head, and exports to `.xlsx`.
+- **Rozpočet:** income and expenses by category, planned against actual,
+  balance, cost per head, the food estimate from the menu, and `.xlsx`
+  export with live formulas.
+- **Vybavení:** lists of what players bring, what the group provides,
+  kitchen gear at the venue and NPC costumes (who wears what), with a
+  missing, have or packed state. A list shared with players appears in their
+  app.
+- **Úkolníček:** tasks per game with assignee, due date (overdue ones in
+  red), status and a link to any record.
+- **Poznámky:** simple rich-text notes per game or for the whole team.
+- **Zpětná vazba:** a post-game survey CSV becomes a retrospective. Name,
+  e-mail and phone columns are unticked by default. Scales show the average,
+  repeated answers show counts, and free text is listed; organizers add
+  their conclusions.
+
+### Changed
+- **Záloha** leaves registrations out unless "Včetně přihlášek" is ticked.
+
 ## 0.6.0: Milestone 5, items, economy and maps (2026-10-05)
 
 No database changes.
