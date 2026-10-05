@@ -12,4 +12,10 @@ export const IPC = {
   updatesInstall: 'updates:install',
   updatesStatus: 'updates:status',
   openExternal: 'shell:open-external',
+  secureGet: 'secure:get',
+  secureSet: 'secure:set',
+  secureRemove: 'secure:remove',
+  saveFile: 'dialog:save-file',
+  inviteLink: 'deeplink:invite',
+  takePendingInvite: 'deeplink:take-invite',
 } as const;

@@ -565,3 +565,36 @@ describe('view as player and who can see', () => {
     ]);
   });
 });
+
+describe('set_record_visibility', () => {
+  it('switches visibility and the access list together', async () => {
+    const page = await insertRecord(db, team, { kind: 'page', game_id: game });
+    await db.as(
+      team.organizer,
+      `select public.set_record_visibility($1, 'specific', $2::uuid[], '{npc}')`,
+      [page, [team.person.player2]],
+    );
+    expect(await canSee(db, team.player2, page)).toBe(true);
+    expect(await canSee(db, team.npc, page)).toBe(true);
+    expect(await canSee(db, team.player1, page)).toBe(false);
+
+    await db.as(team.organizer, `select public.set_record_visibility($1, 'organizers')`, [page]);
+    expect(await canSee(db, team.player2, page)).toBe(false);
+    const rows = await db.admin('select * from public.record_access where record_id = $1', [page]);
+    expect(rows).toHaveLength(0);
+  });
+
+  it('is refused for players and for people of other teams', async () => {
+    const page = await insertRecord(db, team, { kind: 'page', game_id: game });
+    await expect(
+      db.as(team.player1, `select public.set_record_visibility($1, 'everyone')`, [page]),
+    ).rejects.toThrow(/only organizers/);
+    const other = await createTeam(db);
+    await expect(
+      db.as(team.organizer, `select public.set_record_visibility($1, 'specific', $2::uuid[])`, [
+        page,
+        [other.person.player1],
+      ]),
+    ).rejects.toThrow(/unknown person/);
+  });
+});

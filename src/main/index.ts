@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { app, BrowserWindow, session } from 'electron';
 import type { ConnectionConfig } from '@core/connection';
 import { loadConfig } from './config';
+import { forwardInvite, registerProtocol, rememberStartupInvite } from './deep-links';
 import { buildCsp } from './csp';
 import { registerIpcHandlers } from './ipc';
 import { configurePaths, configureUserAgent } from './paths';
@@ -14,6 +15,8 @@ const isDev = devServerUrl !== undefined;
 
 configurePaths();
 configureUserAgent();
+// Czech for Chromium's own UI: date pickers show dd.mm.rrrr, spellcheck in Czech.
+app.commandLine.appendSwitch('lang', 'cs');
 registerAppScheme();
 
 let mainWindow: BrowserWindow | null = null;
@@ -22,7 +25,9 @@ let currentConfig: ConnectionConfig | null = null;
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  rememberStartupInvite(process.argv);
+  app.on('second-instance', (_event, argv) => {
+    forwardInvite(mainWindow, argv);
     if (!mainWindow) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
@@ -33,6 +38,7 @@ if (!app.requestSingleInstanceLock()) {
 
 async function start(): Promise<void> {
   app.setAppUserModelId('cz.chynickylarp.zazemi');
+  registerProtocol();
   currentConfig = await loadConfig();
   const csp = () => buildCsp(currentConfig, { dev: isDev });
 

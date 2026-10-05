@@ -1,4 +1,8 @@
+import '@mantine/notifications/styles.css';
+import '@mantine/spotlight/styles.css';
 import { createTheme, localStorageColorSchemeManager, MantineProvider } from '@mantine/core';
+import { ModalsProvider } from '@mantine/modals';
+import { Notifications } from '@mantine/notifications';
 import type { ReactNode } from 'react';
 
 const theme = createTheme({
@@ -17,7 +21,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       defaultColorScheme="auto"
       colorSchemeManager={colorSchemeManager}
     >
-      {children}
+      <ModalsProvider>
+        <Notifications position="bottom-right" />
+        {children}
+      </ModalsProvider>
     </MantineProvider>
   );
 }

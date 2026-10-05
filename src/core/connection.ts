@@ -10,7 +10,7 @@ export const connectionConfigSchema = z.object({
     .string()
     .trim()
     .pipe(z.url())
-    .refine((value) => value.startsWith('https://'), { message: 'url-not-https' })
+    .refine(isAllowedUrl, { message: 'url-not-https' })
     .transform((value) => value.replace(/\/+$/, '')),
   supabaseAnonKey: z
     .string()
@@ -22,6 +22,22 @@ export const connectionConfigSchema = z.object({
 export type ConnectionConfig = z.infer<typeof connectionConfigSchema>;
 
 const CODE_PREFIX = 'zazemi1:';
+
+/**
+ * HTTPS only, except plain HTTP to this computer, used by the local
+ * development stack (scripts/local-stack).
+ */
+export function isAllowedUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    if (url.protocol === 'https:') return true;
+    return (
+      url.protocol === 'http:' && (url.hostname === '127.0.0.1' || url.hostname === 'localhost')
+    );
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Refuses keys that would grant full database access. Legacy service-role keys

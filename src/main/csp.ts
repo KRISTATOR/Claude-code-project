@@ -8,7 +8,8 @@ export function buildCsp(config: ConnectionConfig | null, options: { dev: boolea
   const connect = ["'self'"];
   if (config) {
     const url = new URL(config.supabaseUrl);
-    connect.push(`https://${url.host}`, `wss://${url.host}`);
+    const secure = url.protocol === 'https:';
+    connect.push(`${url.protocol}//${url.host}`, `${secure ? 'wss' : 'ws'}://${url.host}`);
   }
   if (options.dev) connect.push('ws://localhost:*', 'http://localhost:*');
 

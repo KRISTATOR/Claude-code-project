@@ -21,6 +21,14 @@ export type UpdateStatus =
 
 export type ConfigSetResult = { ok: true } | { ok: false; error: string };
 
+export interface SaveFileRequest {
+  defaultName: string;
+  filters: { name: string; extensions: string[] }[];
+  data: Uint8Array;
+}
+
+export type SaveFileResult = { saved: true; path: string } | { saved: false };
+
 /** The whole surface the renderer can reach: `window.zazemi`. Keep it narrow. */
 export interface ZazemiApi {
   app: {
@@ -39,5 +47,20 @@ export interface ZazemiApi {
   };
   shell: {
     openExternal(url: string): Promise<void>;
+  };
+  /** Small values (the sign-in session) encrypted with the OS (DPAPI on Windows). */
+  secureStore: {
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string): Promise<void>;
+    remove(key: string): Promise<void>;
+  };
+  dialogs: {
+    saveFile(request: SaveFileRequest): Promise<SaveFileResult>;
+  };
+  deepLinks: {
+    /** An invite code from a zazemi://pozvanka/… link opened while running. */
+    onInvite(listener: (code: string) => void): () => void;
+    /** An invite code from the link that started the app, if any (taken once). */
+    takePendingInvite(): Promise<string | null>;
   };
 }

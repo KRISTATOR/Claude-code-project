@@ -24,6 +24,22 @@ const api: ZazemiApi = {
   shell: {
     openExternal: (url) => ipcRenderer.invoke(IPC.openExternal, url),
   },
+  secureStore: {
+    get: (key) => ipcRenderer.invoke(IPC.secureGet, key),
+    set: (key, value) => ipcRenderer.invoke(IPC.secureSet, key, value),
+    remove: (key) => ipcRenderer.invoke(IPC.secureRemove, key),
+  },
+  dialogs: {
+    saveFile: (request) => ipcRenderer.invoke(IPC.saveFile, request),
+  },
+  deepLinks: {
+    onInvite: (listener) => {
+      const handler = (_event: IpcRendererEvent, code: string) => listener(code);
+      ipcRenderer.on(IPC.inviteLink, handler);
+      return () => ipcRenderer.removeListener(IPC.inviteLink, handler);
+    },
+    takePendingInvite: () => ipcRenderer.invoke(IPC.takePendingInvite),
+  },
 };
 
 contextBridge.exposeInMainWorld('zazemi', api);

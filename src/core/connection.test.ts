@@ -47,6 +47,16 @@ describe('connectionConfigSchema', () => {
     expect(parsed.supabaseUrl).toBe(config.supabaseUrl);
   });
 
+  it('allows plain http only to this computer (local development stack)', () => {
+    for (const url of ['http://127.0.0.1:54321', 'http://localhost:54321']) {
+      expect(connectionConfigSchema.safeParse({ ...config, supabaseUrl: url }).success).toBe(true);
+    }
+    expect(
+      connectionConfigSchema.safeParse({ ...config, supabaseUrl: 'http://127.0.0.1.evil.test' })
+        .success,
+    ).toBe(false);
+  });
+
   it('requires https', () => {
     const result = connectionConfigSchema.safeParse({
       ...config,

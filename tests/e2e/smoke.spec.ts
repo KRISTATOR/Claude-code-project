@@ -37,7 +37,7 @@ test('renderer is isolated from Node and served with a strict CSP', async () => 
   expect(exposure).toEqual({
     require: 'undefined',
     process: 'undefined',
-    api: ['app', 'config', 'shell', 'updates'],
+    api: ['app', 'config', 'deepLinks', 'dialogs', 'secureStore', 'shell', 'updates'],
   });
 
   const csp = await page.evaluate(async () => {
@@ -48,7 +48,7 @@ test('renderer is isolated from Node and served with a strict CSP', async () => 
   expect(csp).not.toContain('unsafe-eval');
 });
 
-test('rejects a bad code, then connects and disconnects', async () => {
+test('rejects a bad code, then connects and asks to sign in', async () => {
   const { page } = launched;
 
   await page.getByLabel('Kód pro připojení').fill('nesmysl');
@@ -61,12 +61,7 @@ test('rejects a bad code, then connects and disconnects', async () => {
   });
   await page.getByLabel('Kód pro připojení').fill(code);
   await page.getByRole('button', { name: 'Připojit' }).click();
-  await expect(page.getByRole('heading', { name: 'Připojeno' })).toBeVisible();
-  await expect(page.getByText('Server: testproject.supabase.co')).toBeVisible();
-
-  page.once('dialog', (dialog) => void dialog.accept());
-  await page.getByRole('button', { name: 'Odpojit od serveru' }).click();
-  await expect(page.getByRole('heading', { name: 'Zázemí zatím není připojené' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Přihlášení do Zázemí' })).toBeVisible();
 });
 
 test('switches between light and dark theme', async () => {
