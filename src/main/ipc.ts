@@ -1,4 +1,4 @@
-import { cp, mkdir, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { hostname } from 'node:os';
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron';
@@ -126,10 +126,16 @@ export function registerIpcHandlers(onConfigChanged: () => void): void {
       folder = result.filePaths[0];
     }
     const target = join(folder, 'Zazemi pisma');
-    await mkdir(target, { recursive: true });
-    for (const name of await readdir(fontsRoot())) {
-      await cp(join(fontsRoot(), name), join(target, name), { recursive: true });
-    }
+    // File by file: the fonts sit inside the app's asar archive, which
+    // supports reading but not every copy function.
+    const copy = async (from: string, to: string) => {
+      await mkdir(to, { recursive: true });
+      for (const entry of await readdir(from, { withFileTypes: true })) {
+        if (entry.isDirectory()) await copy(join(from, entry.name), join(to, entry.name));
+        else await writeFile(join(to, entry.name), await readFile(join(from, entry.name)));
+      }
+    };
+    await copy(fontsRoot(), target);
     return { saved: true, path: target };
   });
 

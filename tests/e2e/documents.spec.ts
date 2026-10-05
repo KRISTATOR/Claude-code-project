@@ -73,6 +73,15 @@ test('a writer profile gives documents their look', async () => {
   await page.getByRole('button', { name: 'Uložit', exact: true }).click();
   await expect(page.getByText('Uloženo').first()).toBeVisible();
   await expect(page.getByTestId('paper-preview')).toContainText('Rychta městečka Lipnov');
+
+  // The bundled fonts (with their licences) can be exported for Word.
+  await page.getByRole('button', { name: 'Uložit písma do složky' }).click();
+  await expect
+    .poll(() => existsSync(join(saveDir, 'Zazemi pisma', 'licenses', 'caveat.txt')), {
+      timeout: 30_000,
+    })
+    .toBe(true);
+  expect(existsSync(join(saveDir, 'Zazemi pisma', 'grenze-gotisch.ttf'))).toBe(true);
 });
 
 test('documents are numbered, previewed and exported to PDF and Word in delivery order', async () => {
