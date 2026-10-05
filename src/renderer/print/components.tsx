@@ -32,7 +32,7 @@ export function PaperPreview({
 }) {
   const { ref, width: measured } = useElementSize();
   const width = Math.min(maxWidth, measured || maxWidth);
-  const ratio = piece.size === 'A4-landscape' || piece.size === 'A6-landscape' ? 0.707 : 1.414;
+  const ratio = piece.size.endsWith('landscape') ? 0.707 : 1.414;
   const pad = 0.095;
   return (
     <Box ref={ref} maw={maxWidth} w="100%">

@@ -66,6 +66,24 @@ export function recordLink(
       return '/archiv';
     case 'print_job':
       return '/tisk';
+    case 'item':
+    case 'currency':
+    case 'transfer':
+      return '/predmety';
+    case 'recipe':
+      return '/recepty';
+    case 'loot_table':
+      return '/nalezy';
+    case 'inventory_item':
+      return '/sklad';
+    case 'map':
+      return `/mapy/${record.id}`;
+    case 'map_layer':
+      return record.parent_id ? `/mapy/${record.parent_id}` : '/mapy';
+    case 'travel_route':
+      return '/cesty';
+    case 'sleeping_plan':
+      return '/spani';
     case 'rulebook':
     case 'rule_section':
     case 'glossary_term':

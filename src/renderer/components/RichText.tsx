@@ -46,6 +46,8 @@ export const LINKABLE_KINDS = new Set([
   'glossary_term',
   'history_event',
   'prop_document',
+  'item',
+  'map',
 ]);
 
 export interface LinkTarget {

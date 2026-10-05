@@ -5,7 +5,7 @@ import { connect, signUp, uniqueEmail, type LaunchedApp, type StackEnv } from '.
 export async function go(page: Page, label: string): Promise<void> {
   const nav = page.getByRole('navigation');
   const item = nav.getByText(label, { exact: true });
-  for (const group of ['Příběh', 'Tisk']) {
+  for (const group of ['Příběh', 'Svět hry', 'Tisk']) {
     if (await item.isVisible()) break;
     const header = nav.getByText(group, { exact: true });
     if (!(await header.isVisible())) continue;
@@ -41,10 +41,13 @@ export async function choose(scope: Page | Locator, label: string, option: strin
 
 /** Answers the small "name" dialog used to create records. */
 export async function named(page: Page, name: string): Promise<void> {
-  const dialog = page.getByRole('dialog');
+  // Only the name dialog: another dialog may open right after it.
+  const dialog = page
+    .getByRole('dialog')
+    .filter({ has: page.getByRole('button', { name: 'Vytvořit' }) });
   await dialog.getByLabel('Název').fill(name);
   await dialog.getByRole('button', { name: 'Vytvořit' }).click();
-  await expect(dialog).toBeHidden();
+  await expect(dialog).toHaveCount(0);
 }
 
 /**
@@ -87,4 +90,27 @@ export async function setUpTeam(
   await player.page.getByRole('button', { name: 'Připojit se k týmu' }).click();
   await expect(player.page.getByRole('heading', { name: 'Ahoj, Hana Hráčka' })).toBeVisible();
   await syncNow(page);
+}
+
+/** Adds a phase named `name` (labelled 0, 1, 2… in order of creation). */
+export async function createPhase(page: Page, name: string): Promise<void> {
+  await go(page, 'Fáze a bloky');
+  await page.getByRole('button', { name: 'Nová fáze' }).click();
+  const field = page.getByTestId('phases').getByLabel('Název').last();
+  await field.fill(name);
+  await field.press('Tab');
+}
+
+/** Creates a character; optionally attaches a player to it. */
+export async function createCharacter(page: Page, name: string, player?: string): Promise<void> {
+  await go(page, 'Postavy');
+  await page.getByRole('button', { name: 'Nová postava' }).click();
+  await page.getByRole('dialog').getByLabel('Jméno postavy').fill(name);
+  await page.getByRole('button', { name: 'Vytvořit' }).click();
+  await expect(page.getByTestId('character-sheet')).toBeVisible();
+  if (player) {
+    await choose(page, 'Hráč', player);
+    await page.getByRole('button', { name: 'Uložit', exact: true }).click();
+    await expect(page.getByText('Uloženo').first()).toBeVisible();
+  }
 }

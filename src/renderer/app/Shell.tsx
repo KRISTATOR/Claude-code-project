@@ -15,6 +15,14 @@ import {
 } from '@mantine/core';
 import { spotlight } from '@mantine/spotlight';
 import {
+  IconBed,
+  IconBox,
+  IconFlask,
+  IconMap,
+  IconPackage,
+  IconTrees,
+  IconWalk,
+  IconWorld,
   IconArchive,
   IconFiles,
   IconFileText,
@@ -67,6 +75,13 @@ import { PhasesPage } from '../tools/PhasesPage';
 import { RelationshipsPage } from '../tools/RelationshipsPage';
 import { SchedulePage } from '../tools/SchedulePage';
 import { ArchivePage } from '../documents/ArchivePage';
+import { InventoryPage } from '../economy/InventoryPage';
+import { ItemsPage } from '../economy/ItemsPage';
+import { LootPage } from '../economy/LootPage';
+import { RecipesPage } from '../economy/RecipesPage';
+import { SleepingPage } from '../economy/SleepingPage';
+import { TravelPage } from '../economy/TravelPage';
+import { MapsPage } from '../maps/MapsPage';
 import { DocumentsPage } from '../documents/DocumentsPage';
 import { FormsPage } from '../documents/FormsPage';
 import { PrintQueuePage } from '../documents/PrintQueuePage';
@@ -161,6 +176,19 @@ export function Shell() {
       organizerOnly: true,
     },
   ];
+  const gameWorld: NavItem[] = [
+    { to: '/mapy', label: t('nav.maps'), icon: <IconMap size={18} /> },
+    {
+      to: '/predmety',
+      label: t('nav.items'),
+      icon: <IconPackage size={18} />,
+      organizerOnly: true,
+    },
+    { to: '/recepty', label: t('nav.recipes'), icon: <IconFlask size={18} />, organizerOnly: true },
+    { to: '/nalezy', label: t('nav.loot'), icon: <IconTrees size={18} />, organizerOnly: true },
+    { to: '/cesty', label: t('nav.travel'), icon: <IconWalk size={18} />, organizerOnly: true },
+    { to: '/spani', label: t('nav.sleeping'), icon: <IconBed size={18} />, organizerOnly: true },
+  ];
   const printing: NavItem[] = [
     {
       to: '/dokumenty',
@@ -196,6 +224,7 @@ export function Shell() {
   ];
   const teamItems: NavItem[] = [
     { to: '/lide', label: t('nav.people'), icon: <IconUsers size={18} />, organizerOnly: true },
+    { to: '/sklad', label: t('nav.inventory'), icon: <IconBox size={18} />, organizerOnly: true },
     { to: '/kos', label: t('nav.trash'), icon: <IconTrash size={18} />, organizerOnly: true },
     { to: '/nastaveni', label: t('nav.settings'), icon: <IconSettings size={18} /> },
   ];
@@ -274,6 +303,16 @@ export function Shell() {
             >
               {allowed(story).map(link)}
             </NavLink>
+            <NavLink
+              label={t('nav.gameWorld')}
+              leftSection={<IconWorld size={18} />}
+              py={6}
+              defaultOpened={gameWorld.some((item) => location.pathname.startsWith(item.to))}
+              childrenOffset={12}
+              data-testid="nav-world"
+            >
+              {allowed(gameWorld).map(link)}
+            </NavLink>
             {isOrganizer && (
               <NavLink
                 label={t('nav.printing')}
@@ -349,6 +388,14 @@ export function Shell() {
           <Route path="/cedule" element={<SignsPage />} />
           <Route path="/archiv" element={<ArchivePage />} />
           <Route path="/tisk" element={<PrintQueuePage />} />
+          <Route path="/mapy" element={<MapsPage />} />
+          <Route path="/mapy/:id" element={<MapsPage />} />
+          <Route path="/predmety" element={<ItemsPage />} />
+          <Route path="/recepty" element={<RecipesPage />} />
+          <Route path="/nalezy" element={<LootPage />} />
+          <Route path="/cesty" element={<TravelPage />} />
+          <Route path="/spani" element={<SleepingPage />} />
+          <Route path="/sklad" element={<InventoryPage />} />
           <Route path="/lide" element={<PeoplePage />} />
           <Route path="/kos" element={<TrashPage />} />
           <Route path="/nastaveni" element={<SettingsPage />} />
@@ -360,6 +407,7 @@ export function Shell() {
           ...allowed(general),
           ...allowed(game),
           ...allowed(story),
+          ...allowed(gameWorld),
           ...allowed(printing),
           ...allowed(teamItems),
         ]}

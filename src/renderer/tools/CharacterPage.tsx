@@ -46,6 +46,7 @@ import {
   useTeamRecords,
 } from '../data/hooks';
 import { useSheetTemplate } from './CharactersPage';
+import { CharacterProperty } from '../economy/CharacterProperty';
 import { HookDialog } from '../lore/PlotsPage';
 import { Field, useRun } from './common';
 
@@ -318,11 +319,7 @@ function CharacterSheet({
                 {section.type === 'definitions' && (
                   <CharacterDefinitions ids={fields.definition_ids} definitions={definitions} />
                 )}
-                {section.type === 'property' && (
-                  <Text size="sm" c="dimmed">
-                    {t('characters.propertyLater')}
-                  </Text>
-                )}
+                {section.type === 'property' && <CharacterProperty character={record} />}
               </Paper>
             ))}
 

@@ -99,7 +99,9 @@ export async function stampPages(bytes: Uint8Array, stamps: Stamp[]): Promise<Ui
 }
 
 /** A4 landscape in PDF points. */
-const A4_LANDSCAPE: [number, number] = [841.89, 595.28];
+export const A4_LANDSCAPE: [number, number] = [841.89, 595.28];
+/** A4 portrait in PDF points. */
+export const A4_PORTRAIT: [number, number] = [595.28, 841.89];
 
 /**
  * Puts A5 pages two per A4 landscape side in `order` (1-based page numbers,
