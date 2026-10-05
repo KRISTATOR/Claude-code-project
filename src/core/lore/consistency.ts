@@ -39,7 +39,10 @@ export type Finding =
   | { type: 'canon_missing_subject'; key: string; canon_id: string }
   | { type: 'missing_document'; key: string; from_id: string; number: string };
 
-export type CheckedRecord = Pick<RecordRow, 'id' | 'kind' | 'title' | 'data' | 'deleted_at'>;
+export type CheckedRecord = Pick<
+  RecordRow,
+  'id' | 'kind' | 'title' | 'data' | 'deleted_at' | 'created_at'
+>;
 
 /** Kinds whose titles are names that players and writers will use. */
 export const NAMED_KINDS = new Set([
@@ -184,7 +187,11 @@ export function checkConsistency(records: CheckedRecord[]): Finding[] {
 
   // Canon: each fact against its subject, and facts against each other.
   const facts = new Map<string, { id: string; value: string }>();
-  for (const record of live.filter((row) => row.kind === 'canon_entry')) {
+  // Oldest first, so "the earlier value" is stable however the list was sorted.
+  const canonRecords = live
+    .filter((row) => row.kind === 'canon_entry')
+    .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+  for (const record of canonRecords) {
     const canon = readData(canonEntryKind, record);
     const value = canon.value.trim();
     if (!value) continue;
