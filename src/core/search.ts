@@ -1,10 +1,11 @@
-import MiniSearch, { type SearchResult } from 'minisearch';
-import { fold } from './text';
+import MiniSearch, { type Query, type SearchResult } from 'minisearch';
+import { fold, stemCzech } from './text';
 
 /**
  * Full-text search with Czech handled properly (docs/PLAN.md §2.8): case and
  * diacritics are ignored, words match by prefix ("Lipnov" finds "Lipnově"),
- * and longer words tolerate one typo. A light suffix stemmer arrives in M3.
+ * and longer words tolerate one typo. Words are also indexed by a light stem,
+ * so inflected forms match ("hraběnkami" finds "hraběnka").
  */
 export interface SearchDoc {
   id: string;
@@ -33,7 +34,11 @@ export class SearchIndex {
     fields: ['title', 'body'],
     storeFields: ['kind', 'title', 'body'],
     tokenize,
-    processTerm: (term) => fold(term),
+    processTerm: (term) => {
+      const folded = fold(term);
+      const stem = stemCzech(term);
+      return stem === folded ? folded : [folded, stem];
+    },
     searchOptions: {
       boost: { title: 3 },
       prefix: true,
@@ -56,9 +61,22 @@ export class SearchIndex {
   }
 
   search(query: string, limit = 50): Hit[] {
-    if (!query.trim()) return [];
+    const words = tokenize(query);
+    if (words.length === 0) return [];
+    // Each word matches by its folded prefix (with a typo allowed) or exactly
+    // by its stem, so "Lipnov" finds "Lipnově" but not "Lipnice".
+    const query_: Query = {
+      combineWith: 'AND',
+      queries: words.map((word) => ({
+        combineWith: 'OR',
+        queries: [
+          { queries: [word], processTerm: fold },
+          { queries: [word], processTerm: stemCzech, prefix: false, fuzzy: false },
+        ],
+      })),
+    };
     return this.index
-      .search(query)
+      .search(query_)
       .slice(0, limit)
       .map((result: SearchResult) => ({
         id: result.id as string,

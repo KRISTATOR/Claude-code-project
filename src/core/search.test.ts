@@ -83,3 +83,20 @@ describe('snippet', () => {
     expect(result).toContain('Lipnově se nic neděje');
   });
 });
+
+describe('Czech stems', () => {
+  it('finds other case forms of a word', () => {
+    const search = new SearchIndex();
+    search.addAll([
+      { id: 'a', kind: 'page', title: 'Hraběnka z Lipnova', body: '' },
+      { id: 'b', kind: 'page', title: 'Kovárna', body: 'Kovář pracuje s hraběnkami.' },
+    ]);
+    expect(
+      search
+        .search('hraběnkami')
+        .map((hit) => hit.id)
+        .sort(),
+    ).toEqual(['a', 'b']);
+    expect(search.search('Lipnově').map((hit) => hit.id)).toEqual(['a']);
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareCzech, fold, matchesQuery } from './text';
+import { compareCzech, fold, matchesQuery, stemCzech } from './text';
 
 describe('fold', () => {
   it('removes Czech diacritics', () => {
@@ -28,5 +28,15 @@ describe('compareCzech', () => {
       'Hora',
       'Chalupa',
     ]);
+  });
+});
+
+describe('stemCzech', () => {
+  it('strips one case ending and keeps at least three letters', () => {
+    expect(stemCzech('hraběnkami')).toBe('hrabenk');
+    expect(stemCzech('Hraběnka')).toBe('hrabenk');
+    expect(stemCzech('Lipnově')).toBe('lipn');
+    expect(stemCzech('dům')).toBe('dum');
+    expect(stemCzech('Voják12')).toBe('vojak12');
   });
 });
