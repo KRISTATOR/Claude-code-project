@@ -3,6 +3,55 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 0.4.0: Milestone 3, lore and time (2026-10-05)
+
+**Database changes: run "Deploy database" (docs/SETUP.md, step 6) before
+installing this version.** It adds the trigger that keeps backlinks.
+
+### Added
+- **Rich text with [[links]]:** wiki pages, history, plot summaries and rule
+  sections use a rich-text editor (headings, lists, quotes). Typing `[[`
+  offers characters, places, groups, NPCs, threads and rules to link; links
+  follow renames and show struck through when the target is gone. A database
+  trigger keeps backlinks in step with the text.
+- **Encyklopedie:** pages for places, organizations, people off stage, laws,
+  religions and historical events, per world or per game, with tags, a
+  summary, organizer-only notes, "Odkazuje sem" (backlinks) and visibility.
+- **Kánon:** a registry of facts (house numbers, ages, titles, dates…).
+- **Kontrola:** the consistency checker finds the same name twice,
+  confusable names ("Lipnov" / "Lipnice"), links to deleted or trashed
+  records, characters that differ from the canon, and two canon values for
+  one fact. Findings can be hidden or turned into an open question. Prose
+  contradictions are out of scope (see PLAN §1.9).
+- **Otevřené otázky:** issues with priority, status, who is on it and the
+  records they concern.
+- **Dějiny:** an in-world timeline dated relative to the game ("před 120
+  lety"), with the world's own date labels.
+- **Průběh hry:** the run-of-show by phase and block, with beats (scenes,
+  announcements, logistics) and the NPC appearances of each block, and a
+  **checklist per phase** generated from NPC preparation, beats, clues to
+  place and quests to post, plus hand-written tasks. Ticking an item updates
+  the record it comes from.
+- **Zápletky:** plot threads with organizer-only resolutions, clues and where
+  each one lives (who holds it or where it is), and a warning for threads no
+  reachable clue leads to. **Háčky:** personal hooks per character, which can
+  be shown to that character's player on their sheet.
+- **Úkoly a nástěnka:** quests and job offers with giver, reward and phase;
+  the resolution is organizer-only, and players never see drafts.
+- **Pravidla:** a rulebook with ordered chapters, a separate safety and code
+  of conduct tab, a glossary, organizer-only mechanics notes per chapter,
+  published versions ("v1") and "what changed since v1" as a word diff.
+- **Klonovat jako pokračování:** copies a game with everything in it under
+  new ids, remapping every reference (relationships, clue holders, links in
+  text…). Files stay with the original game.
+- Search understands Czech word endings ("hraběnkami" finds "hraběnka")
+  and indexes rich text.
+- RLS tests for all new kinds, hooks shared through their character, and
+  backlinks (a link is visible only when both ends are).
+
+### Changed
+- The story pages sit in a collapsible "Příběh" group in the navigation.
+
 ## 0.3.0: Milestone 2, characters (2026-10-05)
 
 No database changes: everything new is a record kind on the existing schema.

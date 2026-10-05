@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0, 1a, 1b and 2 are done; next is M3.**
+Status: **approved 2026-10-05. Milestones 0, 1a, 1b, 2 and 3 are done; next is M4.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -517,7 +517,7 @@ registrations   id, team_id, game_id, person_id, status, consent_on_file, allerg
 | M1a | `world`, `game` |
 | M1b | `folder`, `file`, `doc_template` |
 | M2 | `character`, `character_profile`, `sheet_template`, `npc`, `npc_appearance`, `faction` (faction, opinion group, clan, ethnic or religious group), `relationship`, `definition` (race, class, profession, skill), `phase`, `block` |
-| M3 | `page` (subtypes: place, organization, off-stage person, law or decree, religion, historical event, real-history note), `canon_entry`, `history_event`, `beat` (run-of-show), `plot_thread`, `clue`, `quest`, `hook`, `issue`, `rulebook`, `rule_section`, `glossary_term` |
+| M3 | `page` (subtypes: place, organization, off-stage person, law or decree, religion, historical event, real-history note), `canon_entry`, `history_event`, `beat` (run-of-show), `plot_thread`, `clue`, `quest`, `hook`, `issue`, `rulebook`, `rule_section`, `glossary_term`, `rulebook_version` (a frozen published copy) |
 | M4 | `prop_document`, `writer_profile`, `form_template`, `location_sign`, `archive`, `archive_part`, `print_job`, `diary_design` |
 | M5 | `item`, `currency`, `recipe`, `loot_table`, `inventory_item` (props the group owns), `map`, `map_layer`, `travel_route`, `sleeping_plan` |
 | M6 | `meal`, `dish`, `ingredient`, `budget_line`, `equipment_list`, `task`, `note`, `survey` |
@@ -706,6 +706,14 @@ Each milestone ends with a stop for your review.
   organizer-only mechanics notes, and a separate safety and code-of-conduct
   section.
 * Clone a game as a sequel.
+* As built: rich text is TipTap JSON; a `[[link]]` is a `wikiLink` node with
+  the target id, read by the trigger `private.sync_record_links` (organizer
+  secrets are never scanned). `record_links` are readable only when both
+  ends are. Checklist state lives on the records themselves (NPC prep
+  status, beat done, clue placed, quest posted) plus hand-written tasks on
+  the phase. "References to numbered documents that don't exist" join the
+  checker in M4, when documents have numbers. Cloning leaves files and
+  folders with the original game.
 
 ### M4: Prop documents and printing
 * Document records with all the brief's fields; numbering; status workflow.
