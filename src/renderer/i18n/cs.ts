@@ -629,6 +629,7 @@ export const cs = {
     canonConflict: 'kánon říká „{{expected}}“, záznam má „{{actual}}“',
     canonContradiction: '{{subject}}: kánon má dvě hodnoty, „{{a}}“ a „{{b}}“',
     canonMissing: 'fakt patří k záznamu, který už neexistuje',
+    missingDocument: 'odkazuje na dokument č. {{number}}, který neexistuje',
     types: {
       duplicate_name: 'Stejné jméno',
       similar_names: 'Podobná jména',
@@ -636,6 +637,7 @@ export const cs = {
       canon_conflict: 'Rozpor s kánonem',
       canon_contradiction: 'Rozpor v kánonu',
       canon_missing_subject: 'Fakt bez záznamu',
+      missing_document: 'Chybějící dokument',
     },
     toIssue: 'Založit otázku',
     issueCreated: 'Otázka založena',

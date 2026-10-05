@@ -137,6 +137,7 @@ export const questKind = defineKind({
     giver_name: z.string().default(''),
     description: z.string().default(''),
     reward: z.string().default(''),
+    conditions: z.string().default(''),
     phase_id: id,
     status: z.enum(questStatuses).catch('draft').default('draft'),
     thread_id: id,

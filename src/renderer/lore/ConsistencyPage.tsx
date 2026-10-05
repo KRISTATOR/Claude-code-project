@@ -133,6 +133,12 @@ function Checker({ game }: { game: RecordRow }) {
             {link(finding.canon_id)}: {t('consistency.canonMissing')}
           </>
         );
+      case 'missing_document':
+        return (
+          <>
+            {link(finding.from_id)}: {t('consistency.missingDocument', { number: finding.number })}
+          </>
+        );
     }
   };
 
@@ -227,5 +233,7 @@ function relatedIds(finding: Finding): string[] {
       return [finding.subject_id, finding.canon_id];
     case 'canon_missing_subject':
       return [finding.canon_id];
+    case 'missing_document':
+      return [finding.from_id];
   }
 }

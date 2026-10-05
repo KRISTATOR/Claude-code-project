@@ -148,3 +148,9 @@ export function dataLinkNodes(data: unknown): { id: string; label: string }[] {
   walk(data);
   return found;
 }
+
+/** The label a `[[link]]` was written with. */
+export function labelOf(node: RichNode): string {
+  const label = node.attrs?.['label'];
+  return typeof label === 'string' ? label : '';
+}

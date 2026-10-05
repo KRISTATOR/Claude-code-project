@@ -10,6 +10,16 @@ import {
   relationshipKind,
   sheetTemplateKind,
 } from './characters';
+import {
+  archiveKind,
+  archivePartKind,
+  diaryDesignKind,
+  formTemplateKind,
+  locationSignKind,
+  printJobKind,
+  propDocumentKind,
+  writerProfileKind,
+} from './documents';
 import { fileKind } from './file';
 import { folderKind } from './folder';
 import { gameKind } from './game';
@@ -34,6 +44,7 @@ import { worldKind } from './world';
 export { fileKind, folderKind, gameKind, worldKind };
 export * from './characters';
 export * from './lore';
+export * from './documents';
 export { gameStatuses, type GameStatus } from './game';
 export { readData, readSecret, type KindDefinition } from './registry';
 
@@ -65,4 +76,12 @@ export const kinds: Record<string, KindDefinition> = {
   [ruleSectionKind.kind]: ruleSectionKind,
   [glossaryTermKind.kind]: glossaryTermKind,
   [rulebookVersionKind.kind]: rulebookVersionKind,
+  [propDocumentKind.kind]: propDocumentKind,
+  [writerProfileKind.kind]: writerProfileKind,
+  [formTemplateKind.kind]: formTemplateKind,
+  [locationSignKind.kind]: locationSignKind,
+  [diaryDesignKind.kind]: diaryDesignKind,
+  [archiveKind.kind]: archiveKind,
+  [archivePartKind.kind]: archivePartKind,
+  [printJobKind.kind]: printJobKind,
 };

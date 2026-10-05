@@ -1,6 +1,7 @@
-import { canonEntryKind, characterKind, readData } from '../kinds';
+import { canonEntryKind, characterKind, propDocumentKind, readData } from '../kinds';
+import { referencedNumbers } from '../print/documents';
 import type { RecordRow } from '../model';
-import { dataLinkNodes } from '../richtext';
+import { dataLinkNodes, fieldText } from '../richtext';
 import { fold, stemCzech } from '../text';
 
 /**
@@ -35,7 +36,8 @@ export type Finding =
       subject: string;
       values: [string, string];
     }
-  | { type: 'canon_missing_subject'; key: string; canon_id: string };
+  | { type: 'canon_missing_subject'; key: string; canon_id: string }
+  | { type: 'missing_document'; key: string; from_id: string; number: string };
 
 export type CheckedRecord = Pick<RecordRow, 'id' | 'kind' | 'title' | 'data' | 'deleted_at'>;
 
@@ -156,6 +158,26 @@ export function checkConsistency(records: CheckedRecord[]): Finding[] {
         target_id: link.id,
         label: link.label,
         trashed: byId.has(link.id),
+      });
+    }
+  }
+
+  // References to numbered documents that do not exist ("dopis č. 12").
+  const numbers = new Set(
+    live
+      .filter((row) => row.kind === 'prop_document')
+      .map((row) => readData(propDocumentKind, row).number.trim())
+      .filter(Boolean),
+  );
+  for (const record of live) {
+    const text = [record.title, ...Object.values(record.data).map(fieldText)].join('\n');
+    for (const number of referencedNumbers(text)) {
+      if (numbers.has(number)) continue;
+      findings.push({
+        type: 'missing_document',
+        key: `doc:${record.id}:${number}`,
+        from_id: record.id,
+        number,
       });
     }
   }

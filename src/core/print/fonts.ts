@@ -7,6 +7,8 @@ export type FontCategory = (typeof fontCategories)[number];
 
 export interface BundledFont {
   id: string;
+  /** The font's own family name (what Word shows once it is installed). */
+  name: string;
   /** CSS font-family name used in previews and print. */
   family: string;
   category: FontCategory;
@@ -18,6 +20,7 @@ export interface BundledFont {
 export const BUNDLED_FONTS: readonly BundledFont[] = [
   {
     id: 'caveat',
+    name: 'Caveat',
     family: 'Zazemi Caveat',
     category: 'handwriting',
     files: [{ file: 'caveat.ttf', weight: '400 700', style: 'normal' }],
@@ -26,6 +29,7 @@ export const BUNDLED_FONTS: readonly BundledFont[] = [
   },
   {
     id: 'marck-script',
+    name: 'Marck Script',
     family: 'Zazemi Marck Script',
     category: 'handwriting',
     files: [{ file: 'marck-script.ttf', weight: '400', style: 'normal' }],
@@ -34,6 +38,7 @@ export const BUNDLED_FONTS: readonly BundledFont[] = [
   },
   {
     id: 'courier-prime',
+    name: 'Courier Prime',
     family: 'Zazemi Courier Prime',
     category: 'typewriter',
     files: [
@@ -45,6 +50,7 @@ export const BUNDLED_FONTS: readonly BundledFont[] = [
   },
   {
     id: 'special-elite',
+    name: 'Special Elite',
     family: 'Zazemi Special Elite',
     category: 'typewriter',
     files: [{ file: 'special-elite.ttf', weight: '400', style: 'normal' }],
@@ -53,6 +59,7 @@ export const BUNDLED_FONTS: readonly BundledFont[] = [
   },
   {
     id: 'grenze-gotisch',
+    name: 'Grenze Gotisch',
     family: 'Zazemi Grenze Gotisch',
     category: 'blackletter',
     files: [{ file: 'grenze-gotisch.ttf', weight: '100 900', style: 'normal' }],
@@ -61,6 +68,7 @@ export const BUNDLED_FONTS: readonly BundledFont[] = [
   },
   {
     id: 'eb-garamond',
+    name: 'EB Garamond',
     family: 'Zazemi EB Garamond',
     category: 'serif',
     files: [
