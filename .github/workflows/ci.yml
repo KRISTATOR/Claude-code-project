@@ -61,3 +61,57 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  supabase:
+    name: RLS tests and e2e on the official Supabase stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase (applies supabase/migrations)
+        run: supabase start -x studio,imgproxy,vector,logflare,postgres-meta,supavisor
+
+      - name: RLS tests against Supabase Postgres
+        env:
+          ZAZEMI_TEST_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: npm run test:db
+
+      - name: Export stack details for e2e
+        run: |
+          supabase status -o env > supabase.env
+          url="$(grep '^API_URL=' supabase.env | cut -d= -f2- | tr -d '"')"
+          key="$(grep '^ANON_KEY=' supabase.env | cut -d= -f2- | tr -d '"')"
+          echo "ZAZEMI_E2E_SUPABASE_URL=$url" >> "$GITHUB_ENV"
+          echo "ZAZEMI_E2E_SUPABASE_ANON_KEY=$key" >> "$GITHUB_ENV"
+
+      - name: Build (test build)
+        run: npm run build:test
+
+      - name: Allow Electron sandbox
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: End-to-end tests against Supabase
+        run: xvfb-run -a npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-supabase
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

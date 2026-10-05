@@ -1,0 +1,5 @@
+{
+  "//": "Edge Functions run on Deno and are type-checked by Supabase when deployed, not by this repo's tsc.",
+  "compilerOptions": { "noEmit": true },
+  "include": []
+}

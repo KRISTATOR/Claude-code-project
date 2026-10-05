@@ -59,7 +59,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ['eslint.config.js'],
+    files: ['eslint.config.js', 'scripts/**/*.mjs', 'supabase/functions/**/*.ts'],
     ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: globals.node },
   },
 );

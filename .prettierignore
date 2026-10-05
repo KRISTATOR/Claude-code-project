@@ -4,3 +4,5 @@ dist
 release
 package-lock.json
 *.md
+.local-stack
+supabase/.temp
