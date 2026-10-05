@@ -1,5 +1,6 @@
 import {
   Checkbox,
+  Modal,
   Alert,
   Button,
   Group,
@@ -12,6 +13,15 @@ import {
   Title,
 } from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
+import type { RestorePlan } from '@core/restore';
+import {
+  NotABackupError,
+  openBackup,
+  restorePlanFor,
+  runRestore,
+  type OpenedBackup,
+} from '../../data/restore';
 import { useEffect, useState } from 'react';
 import { formatBytes } from '@core/format';
 import { fileKind, readData } from '@core/kinds';
@@ -234,6 +244,7 @@ function Team() {
               {progress}
             </Text>
           )}
+          {canEdit && <RestoreBackup />}
         </Stack>
       )}
     </Section>
@@ -381,5 +392,120 @@ function Updates() {
         {t('updates.check')}
       </Button>
     </Section>
+  );
+}
+
+function RestoreBackup() {
+  const { t } = useTranslation();
+  const { client } = useBackend();
+  const { team } = useTeam();
+  const { refresh } = useWorkspace();
+  const { files } = useDrive();
+  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<{ opened: OpenedBackup; plan: RestorePlan } | null>(null);
+
+  async function choose() {
+    setBusy(true);
+    try {
+      const opened = await openBackup();
+      if (!opened) return;
+      const plan = await restorePlanFor(client, team.id, opened.backup);
+      if (plan.records.length === 0 && plan.registrations.length === 0) {
+        opened.close();
+        notifySuccess(t('settings.restoreNothing'));
+        return;
+      }
+      setPending({ opened, plan });
+    } catch (error) {
+      notifyError(
+        error instanceof NotABackupError ? t('settings.notBackup') : errorMessage(t, error),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function start() {
+    if (!pending) return;
+    const { opened, plan } = pending;
+    setPending(null);
+    setBusy(true);
+    const id = notifications.show({ loading: true, autoClose: false, message: '' });
+    try {
+      const result = await runRestore(plan, {
+        client,
+        files,
+        teamId: team.id,
+        read: opened.read,
+        onProgress: (done, total) =>
+          notifications.update({ id, message: t('settings.restoreProgress', { done, total }) }),
+      });
+      notifications.hide(id);
+      notifySuccess(t('settings.restoreDone', { records: result.records, files: result.files }));
+      if (result.failedFiles.length > 0) {
+        notifyError(t('settings.restoreFailedFiles', { names: result.failedFiles.join(', ') }));
+      }
+      await refresh({ reconcile: true });
+    } catch (error) {
+      notifications.hide(id);
+      notifyError(errorMessage(t, error));
+    } finally {
+      opened.close();
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Stack gap="xs" mt="sm">
+      <Text size="sm" c="dimmed">
+        {t('settings.restoreHint')}
+      </Text>
+      <Button w="fit-content" variant="default" loading={busy} onClick={() => void choose()}>
+        {t('settings.restore')}
+      </Button>
+      {pending && (
+        <Modal
+          opened
+          onClose={() => {
+            pending.opened.close();
+            setPending(null);
+          }}
+          title={t('settings.restore')}
+        >
+          <Stack>
+            <Text size="sm" data-testid="restore-summary">
+              {t('settings.restoreSummary', {
+                records: pending.plan.records.length,
+                files: pending.plan.files.length,
+                people: pending.plan.people.length,
+                existing: pending.plan.existing,
+              })}
+            </Text>
+            {!pending.plan.sameTeam && (
+              <Alert color="orange" variant="light">
+                {t('settings.restoreOtherTeam', { name: pending.opened.backup.team.name })}
+              </Alert>
+            )}
+            {pending.plan.missingFiles > 0 && (
+              <Text size="sm" c="dimmed">
+                {t('settings.restoreMissingFiles', { count: pending.plan.missingFiles })}
+              </Text>
+            )}
+            <Group justify="flex-end">
+              <Button
+                variant="default"
+                onClick={() => {
+                  pending.opened.close();
+                  setPending(null);
+                }}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={() => void start()}>{t('settings.restoreStart')}</Button>
+            </Group>
+          </Stack>
+        </Modal>
+      )}
+    </Stack>
   );
 }

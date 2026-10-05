@@ -62,6 +62,11 @@ const api: ZazemiApi = {
     finish: (token) => ipcRenderer.invoke(IPC.backupFinish, token),
     abort: (token) => ipcRenderer.invoke(IPC.backupAbort, token),
   },
+  archives: {
+    open: () => ipcRenderer.invoke(IPC.archivesOpen),
+    read: (token, archive, entry) => ipcRenderer.invoke(IPC.archivesRead, token, archive, entry),
+    close: (token) => ipcRenderer.invoke(IPC.archivesClose, token),
+  },
   deepLinks: {
     onInvite: (listener) => {
       const handler = (_event: IpcRendererEvent, code: string) => listener(code);

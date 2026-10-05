@@ -120,10 +120,23 @@ export interface ZazemiApi {
     finish(token: string): Promise<string>;
     abort(token: string): Promise<void>;
   };
+  /** Zip archives picked by the user, read entry by entry (imports, restore). */
+  archives: {
+    open(): Promise<ArchiveListing | null>;
+    read(token: string, archive: number, entry: number): Promise<Uint8Array>;
+    close(token: string): Promise<void>;
+  };
   deepLinks: {
     /** An invite code from a zazemi://pozvanka/… link opened while running. */
     onInvite(listener: (code: string) => void): () => void;
     /** An invite code from the link that started the app, if any (taken once). */
     takePendingInvite(): Promise<string | null>;
   };
+}
+
+export interface ArchiveListing {
+  token: string;
+  archives: { name: string; entries: { path: string; size: number }[] }[];
+  /** Set when a picked file is not a zip archive (then nothing is open). */
+  error?: 'not_zip';
 }

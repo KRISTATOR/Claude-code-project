@@ -65,6 +65,8 @@ export function parseInviteLink(url: string): string | null {
 
 export const sha256Input = z.string().regex(/^[0-9a-f]{64}$/);
 export const uuidInput = z.uuid();
+/** An entry or archive number in an opened archive listing. */
+export const indexInput = z.number().int().min(0).max(10_000_000);
 export const MAX_BLOB_BYTES = 60 * 1024 * 1024;
 export const blobDataInput = z
   .instanceof(Uint8Array)

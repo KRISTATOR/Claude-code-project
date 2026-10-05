@@ -26,6 +26,7 @@ import {
   IconFileTypePdf,
   IconFileTypePpt,
   IconFileTypeXls,
+  IconFileZip,
   IconFolder,
   IconFolderPlus,
   IconLock,
@@ -38,7 +39,7 @@ import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEven
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router';
 import { formatBytes, formatDate, formatDateTime } from '@core/format';
-import { extensionOf, MAX_FILE_BYTES } from '@core/files/names';
+import { extensionOf } from '@core/files/names';
 import {
   childrenOf,
   parseScopeKey,
@@ -54,6 +55,9 @@ import { errorMessage } from '../components/errors';
 import { notifyError } from '../components/notify';
 import { VisibilityBadge } from '../components/VisibilityEditor';
 import { FileTooLargeError } from '../data/files';
+import type { ImportReport } from '@core/files/takeout';
+import { ImportPreview, ImportReportDialog } from './ImportDialogs';
+import { jobFromArchives, jobFromPicked, runImport, type ImportJob } from './importer';
 import { useDrive } from './context';
 import { DetailPanel } from './DetailPanel';
 import { fromDrop, fromInput, type PickedFile } from './dropped';
@@ -324,69 +328,62 @@ function FolderView({
     });
   }
 
-  async function upload(picked: PickedFile[]) {
-    if (picked.length === 0) return;
+  const [report, setReport] = useState<ImportReport | null>(null);
+  const [pending, setPending] = useState<{ job: ImportJob; close: () => void } | null>(null);
+
+  async function runJob(job: ImportJob, alwaysReport: boolean) {
     const id = notifications.show({
       loading: true,
       autoClose: false,
       withCloseButton: false,
       message: '',
     });
-    const folderCache = new Map<string, string | null>([['', folderId]]);
-    let done = 0;
-    for (const { folders, file } of picked) {
-      notifications.update({
-        id,
-        message: t('drive.uploading', { done: done + 1, total: picked.length, name: file.name }),
-      });
-      try {
-        if (file.size > MAX_FILE_BYTES) throw new FileTooLargeError(file.name, file.size);
-        // Recreate the dropped folder structure, reusing folders that exist.
-        let parent: string | null = folderId;
-        for (let depth = 1; depth <= folders.length; depth += 1) {
-          const key = folders.slice(0, depth).join('/');
-          const known = folderCache.get(key);
-          if (known !== undefined) {
-            parent = known;
-            continue;
-          }
-          const name = folders[depth - 1] ?? '';
-          const existing = childrenOf(await currentItems(), scope, parent).find(
-            (item) =>
-              item.kind === 'folder' &&
-              item.title.toLocaleLowerCase('cs') === name.toLocaleLowerCase('cs'),
-          );
-          const created = existing ?? (await files.createFolder(scope, parent, name, 'organizers'));
-          if (!existing) await inheritVisibility(parent, created);
-          folderCache.set(key, created.id);
-          parent = created.id;
-        }
-        const record = await files.uploadFile(
-          scope,
-          parent,
-          { name: file.name, data: new Uint8Array(await file.arrayBuffer()) },
-          'organizers',
-        );
-        await inheritVisibility(parent, record);
-        done += 1;
-      } catch (error) {
-        if (error instanceof FileTooLargeError) {
-          notifyError(t('drive.tooLarge', { name: error.fileName, size: formatBytes(error.size) }));
-        } else {
-          notifyError(
-            t('drive.uploadFailed', { name: file.name, message: errorMessage(t, error) }),
-          );
-        }
-      }
-    }
+    const result = await runImport(job, {
+      files,
+      scope,
+      folderId,
+      items: currentItems,
+      inheritVisibility,
+      onProgress: (done, total, name) =>
+        notifications.update({
+          id,
+          message: t('drive.uploading', { done: done + 1, total, name }),
+        }),
+      describeError: (error) =>
+        error instanceof FileTooLargeError
+          ? t('drive.tooLarge', { name: error.fileName, size: formatBytes(error.size) })
+          : errorMessage(t, error),
+    });
     notifications.update({
       id,
       loading: false,
       autoClose: 3000,
       withCloseButton: true,
-      color: 'teal',
-      message: t('drive.uploaded', { count: done }),
+      color: result.failed.length > 0 ? 'orange' : 'teal',
+      message: t('drive.uploaded', { count: result.imported.length }),
     });
+    const quietSkips = result.skipped.every((item) => item.reason === 'junk');
+    if (alwaysReport || result.failed.length > 0 || !quietSkips) setReport(result);
+  }
+
+  async function upload(picked: PickedFile[]) {
+    if (picked.length === 0) return;
+    await runJob(jobFromPicked(picked), false);
+  }
+
+  async function importZip() {
+    try {
+      const listing = await window.zazemi.archives.open();
+      if (!listing) return;
+      if (listing.error === 'not_zip') {
+        notifyError(t('drive.importNotZip'));
+        return;
+      }
+      const close = () => void window.zazemi.archives.close(listing.token);
+      setPending({ job: jobFromArchives(listing.token, listing.archives), close });
+    } catch (error) {
+      notifyError(errorMessage(t, error));
+    }
   }
 
   async function currentItems() {
@@ -441,6 +438,9 @@ function FolderView({
                 </Menu.Item>
                 <Menu.Item onClick={() => folderInput.current?.click()}>
                   {t('drive.uploadFolder')}
+                </Menu.Item>
+                <Menu.Item leftSection={<IconFileZip size={14} />} onClick={() => void importZip()}>
+                  {t('drive.importZip')}
                 </Menu.Item>
                 <Menu.Item
                   leftSection={<IconTemplate size={14} />}
@@ -528,6 +528,21 @@ function FolderView({
           onClose={() => setTemplateOpen(false)}
         />
       )}
+      {pending && (
+        <ImportPreview
+          plan={pending.job.plan}
+          onCancel={() => {
+            pending.close();
+            setPending(null);
+          }}
+          onStart={() => {
+            const { job, close } = pending;
+            setPending(null);
+            void runJob(job, true).finally(close);
+          }}
+        />
+      )}
+      {report && <ImportReportDialog report={report} onClose={() => setReport(null)} />}
     </Stack>
   );
 }

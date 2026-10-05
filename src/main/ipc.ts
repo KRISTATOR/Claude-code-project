@@ -12,12 +12,14 @@ import {
   openExternalInput,
   openViewInput,
   printInput,
+  indexInput,
   saveFileInput,
   secureKeyInput,
   secureValueInput,
   sha256Input,
   uuidInput,
 } from '@shared/ipc';
+import { closeArchives, openArchives, readArchiveEntry } from './archives';
 import { abortBackup, addToBackup, beginBackup, finishBackup } from './backup';
 import { blobUsage, getBlob, hasBlob, putBlob } from './blob-cache';
 import {
@@ -177,4 +179,13 @@ export function registerIpcHandlers(onConfigChanged: () => void): void {
   ipcMain.handle(IPC.backupAbort, (_event, token: unknown) => {
     abortBackup(uuidInput.parse(token));
   });
+  ipcMain.handle(IPC.archivesOpen, (event) =>
+    openArchives(BrowserWindow.fromWebContents(event.sender)),
+  );
+  ipcMain.handle(IPC.archivesRead, (_event, token: unknown, archive: unknown, entry: unknown) =>
+    readArchiveEntry(uuidInput.parse(token), indexInput.parse(archive), indexInput.parse(entry)),
+  );
+  ipcMain.handle(IPC.archivesClose, (_event, token: unknown) =>
+    closeArchives(uuidInput.parse(token)),
+  );
 }

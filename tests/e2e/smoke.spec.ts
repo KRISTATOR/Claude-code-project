@@ -39,6 +39,7 @@ test('renderer is isolated from Node and served with a strict CSP', async () => 
     process: 'undefined',
     api: [
       'app',
+      'archives',
       'backup',
       'blobs',
       'config',
