@@ -1,0 +1,16 @@
+node_modules/
+out/
+dist/
+release/
+coverage/
+test-results/
+playwright-report/
+*.log
+.env
+.env.*
+!.env.example
+# Local app config written by the first-run screen in dev
+zazemi.config.json
+# Supabase local state
+supabase/.branches/
+supabase/.temp/
