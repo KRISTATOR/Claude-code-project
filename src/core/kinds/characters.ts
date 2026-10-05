@@ -181,6 +181,11 @@ export const phaseKind = defineKind({
     order: z.number().catch(0).default(0),
     trigger: z.string().default(''),
     description: z.string().default(''),
+    /** Hand-written checklist items, next to the generated ones (M3). */
+    tasks: z
+      .array(z.object({ id: z.string(), text: z.string(), done: z.boolean().catch(false) }))
+      .catch([])
+      .default([]),
   }),
   secret: emptySecret,
   defaultVisibility: 'organizers',
