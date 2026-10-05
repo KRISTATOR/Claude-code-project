@@ -46,6 +46,16 @@ import {
   rulebookKind,
   rulebookVersionKind,
 } from './lore';
+import {
+  budgetLineKind,
+  dishKind,
+  equipmentListKind,
+  ingredientKind,
+  mealKind,
+  noteKind,
+  surveyKind,
+  taskKind,
+} from './logistics';
 import type { KindDefinition } from './registry';
 import { mapKind, mapLayerKind, sleepingPlanKind, travelRouteKind } from './maps';
 import { worldKind } from './world';
@@ -56,6 +66,7 @@ export * from './lore';
 export * from './documents';
 export * from './economy';
 export * from './maps';
+export * from './logistics';
 export { gameStatuses, type GameStatus } from './game';
 export { readData, readSecret, type KindDefinition } from './registry';
 
@@ -105,4 +116,12 @@ export const kinds: Record<string, KindDefinition> = {
   [mapLayerKind.kind]: mapLayerKind,
   [travelRouteKind.kind]: travelRouteKind,
   [sleepingPlanKind.kind]: sleepingPlanKind,
+  [ingredientKind.kind]: ingredientKind,
+  [dishKind.kind]: dishKind,
+  [mealKind.kind]: mealKind,
+  [budgetLineKind.kind]: budgetLineKind,
+  [equipmentListKind.kind]: equipmentListKind,
+  [taskKind.kind]: taskKind,
+  [noteKind.kind]: noteKind,
+  [surveyKind.kind]: surveyKind,
 };

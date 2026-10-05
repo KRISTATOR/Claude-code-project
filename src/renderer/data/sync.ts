@@ -10,6 +10,7 @@ import {
   recordPersonRow,
   recordRow,
   recordSecretRow,
+  registrationRow,
   teamRow,
   type MemberRole,
 } from '@core/model';
@@ -39,6 +40,7 @@ const PAGE_TABLES = {
   record_people: recordPersonRow,
   record_links: recordLinkRow,
   file_locks: fileLockRow,
+  registrations: registrationRow,
 } as const;
 
 type Listener = () => void;
@@ -170,7 +172,16 @@ export class SyncEngine {
     const c = this.cache;
     await c.transaction(
       'rw',
-      [c.people, c.members, c.invites, c.access, c.recordPeople, c.links, c.locks],
+      [
+        c.people,
+        c.members,
+        c.invites,
+        c.access,
+        c.recordPeople,
+        c.links,
+        c.locks,
+        c.registrations,
+      ],
       async () => {
         await c.people.where('team_id').equals(teamId).delete();
         await c.people.bulkPut(parsed.people);
@@ -186,6 +197,9 @@ export class SyncEngine {
         await c.links.bulkPut(parsed.record_links);
         await c.locks.where('team_id').equals(teamId).delete();
         await c.locks.bulkPut(parsed.file_locks);
+        // Replaced whole, so hard-deleted registrations disappear on the next sync.
+        await c.registrations.where('team_id').equals(teamId).delete();
+        await c.registrations.bulkPut(parsed.registrations);
       },
     );
 
@@ -343,6 +357,7 @@ export class SyncEngine {
         c.links,
         c.locks,
         c.fileText,
+        c.registrations,
       ],
       async () => {
         await c.teams.delete(teamId);
@@ -357,6 +372,7 @@ export class SyncEngine {
           c.links,
           c.locks,
           c.fileText,
+          c.registrations,
         ]) {
           await table.where('team_id').equals(teamId).delete();
         }

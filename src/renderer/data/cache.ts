@@ -10,6 +10,7 @@ import type {
   RecordPersonRow,
   RecordRow,
   RecordSecretRow,
+  RegistrationRow,
   TeamRow,
 } from '@core/model';
 
@@ -35,6 +36,7 @@ export class Cache extends Dexie {
   meta!: Table<MetaRow, string>;
   locks!: Table<FileLockRow, string>;
   fileText!: Table<FileTextRow, string>;
+  registrations!: Table<RegistrationRow, string>;
 
   constructor(name: string) {
     super(name);
@@ -54,6 +56,10 @@ export class Cache extends Dexie {
     this.version(2).stores({
       locks: 'file_id, team_id',
       fileText: 'file_id, team_id, updated_at',
+    });
+    // M6: registrations (personal data; only what the server lets this user read).
+    this.version(3).stores({
+      registrations: 'id, team_id, game_id, person_id',
     });
   }
 

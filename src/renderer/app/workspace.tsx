@@ -134,6 +134,16 @@ export function WorkspaceProvider({
             { event: '*', schema: 'public', table: 'team_members', filter: `team_id=eq.${teamId}` },
             poke,
           )
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'registrations',
+              filter: `team_id=eq.${teamId}`,
+            },
+            poke,
+          )
           .subscribe((status) => {
             realtimeOk = status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED;
           })

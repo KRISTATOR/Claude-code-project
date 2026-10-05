@@ -49,6 +49,15 @@ const gameKinds = [
   'map_layer',
   'travel_route',
   'sleeping_plan',
+  // M6
+  'ingredient',
+  'dish',
+  'meal',
+  'budget_line',
+  'equipment_list',
+  'task',
+  'note',
+  'survey',
 ];
 const worldKinds = [
   'definition',

@@ -13,7 +13,8 @@ export type SyncTable =
   | 'record_people'
   | 'record_links'
   | 'file_locks'
-  | 'file_text';
+  | 'file_text'
+  | 'registrations';
 
 export interface SelectOptions {
   /** Equality filter, e.g. team_id = X. */

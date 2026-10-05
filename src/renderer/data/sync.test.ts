@@ -23,6 +23,7 @@ class FakeRemote implements Remote {
     record_links: [],
     file_locks: [],
     file_text: [],
+    registrations: [],
   };
   failWith: RemoteError | null = null;
   calls: { table: SyncTable; options?: SelectOptions }[] = [];
@@ -323,5 +324,33 @@ describe('SyncEngine', () => {
     await engine.sync(teamId, { reconcile: true });
     expect(await cache.locks.count()).toBe(0);
     expect(await cache.fileText.count()).toBe(0);
+  });
+
+  it('drops hard-deleted registrations on the next sync', async () => {
+    const registration = {
+      id: randomUUID(),
+      team_id: teamId,
+      game_id: randomUUID(),
+      person_id: personId,
+      character_id: null,
+      name: 'Hana Hráčka',
+      status: 'applied',
+      is_minor: false,
+      consent_on_file: false,
+      allergens: ['gluten'],
+      allergies: '',
+      emergency_contact: '',
+      note: '',
+      rev: 1,
+      created_at: at(clock),
+      updated_at: at(clock),
+    };
+    remote.visible.registrations = [registration];
+    await engine.sync(teamId);
+    expect((await cache.registrations.get(registration.id))?.allergens).toEqual(['gluten']);
+
+    remote.visible.registrations = [];
+    await engine.sync(teamId);
+    expect(await cache.registrations.count()).toBe(0);
   });
 });

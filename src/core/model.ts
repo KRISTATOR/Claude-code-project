@@ -178,3 +178,30 @@ export const LOCK_TTL_MS = 10 * 60 * 1000;
 export function isLockFresh(lock: Pick<FileLockRow, 'heartbeat_at'>, now: number): boolean {
   return now - new Date(lock.heartbeat_at).getTime() < LOCK_TTL_MS;
 }
+
+export const registrationStatuses = ['applied', 'confirmed', 'paid', 'assigned', 'cancelled'] as const;
+export type RegistrationStatus = (typeof registrationStatuses)[number];
+
+/**
+ * A participant's registration (M6). Personal data: it lives in its own
+ * table, never in records, search or default exports (docs/PLAN.md §3.1).
+ */
+export const registrationRow = z.object({
+  id: uuid,
+  team_id: uuid,
+  game_id: uuid,
+  person_id: uuid.nullable(),
+  character_id: uuid.nullable(),
+  name: z.string(),
+  status: z.enum(registrationStatuses),
+  is_minor: z.boolean(),
+  consent_on_file: z.boolean(),
+  allergens: z.array(z.string()),
+  allergies: z.string(),
+  emergency_contact: z.string(),
+  note: z.string(),
+  rev: z.number().int(),
+  created_at: timestamp,
+  updated_at: timestamp,
+});
+export type RegistrationRow = z.infer<typeof registrationRow>;
