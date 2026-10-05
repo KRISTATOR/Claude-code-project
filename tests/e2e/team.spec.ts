@@ -114,17 +114,17 @@ test('hiding the game again removes it from the player’s computer', async () =
   await expect(player.page.getByRole('main').getByText('Pevnost na hranici')).toHaveCount(0);
 });
 
-test('offline, the app shows cached data read-only', async () => {
+test('offline, the app shows cached data and keeps edits for later', async () => {
   const { page } = organizer;
   await setOffline(page, true);
   await page.getByRole('button', { name: 'Synchronizovat teď' }).click();
   await expect(page.getByTestId('offline-banner')).toBeVisible();
   await expect(page.getByText('Pohraničí').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Nový svět' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Nový svět' })).toBeVisible();
   await setOffline(page, false);
   await page.getByRole('button', { name: 'Synchronizovat teď' }).click();
   await expect(page.getByTestId('sync-state')).toHaveAttribute('data-state', 'idle');
-  await expect(page.getByRole('button', { name: 'Nový svět' })).toBeVisible();
+  await expect(page.getByTestId('offline-banner')).toHaveCount(0);
 });
 
 test('signing in again on a restarted app restores the session', async () => {

@@ -188,7 +188,7 @@ export const cs = {
     never: 'Zatím nesynchronizováno',
     now: 'Synchronizovat teď',
     offlineBanner:
-      'Jste offline. Zobrazuji data z {{when}}. Úpravy nejsou možné, dokud se nepřipojíte.',
+      'Jste offline. Zobrazuji data z {{when}}. Úpravy záznamů se uloží v tomto počítači a odešlou se po připojení; soubory, pozvánky a viditelnost počkají na připojení.',
     pausedBanner:
       'Server týmu je uspaný (Supabase uspí bezplatné projekty po týdnu nečinnosti). Organizátor ho probudí v přehledu Supabase tlačítkem „Restore project“. Zatím zobrazuji data z {{when}}.',
     errorBanner: 'Synchronizace selhala: {{message}}',
@@ -1647,7 +1647,22 @@ export const cs = {
       append_event: 'Zápis do deníku',
       record_reading: 'Hodnota',
       mark_delivered: 'Doručeno',
+      create_record: 'Nový záznam',
+      update_record: 'Úprava',
     },
+    conflict: 'Mezitím to změnil někdo jiný',
+    compare: 'Porovnat',
+    conflictTitle: 'Dvě verze: {{title}}',
+    conflictHint:
+      'Než se vaše úprava dostala na server, změnil tento záznam někdo jiný. Vyberte, co platí.',
+    field: 'Pole',
+    mine: 'Vaše verze',
+    theirs: 'Verze na serveru',
+    name: 'Název',
+    keepMine: 'Ponechat moji',
+    keepTheirs: 'Vzít jejich',
+    keepBoth: 'Ponechat obě',
+    copyTitle: '{{title}} (moje verze)',
   },
   clone: {
     button: 'Klonovat jako pokračování',

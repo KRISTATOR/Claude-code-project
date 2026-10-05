@@ -239,7 +239,9 @@ export class SyncEngine {
       }),
     );
     if (rows.length === 0) return;
-    await this.cache.records.bulkPut(rows);
+    // A record with a change waiting in the outbox keeps its local version.
+    const pending = await this.pendingIds(teamId);
+    await this.cache.records.bulkPut(rows.filter((row) => !pending.has(row.id)));
     await this.cache.setMeta(
       key,
       maxTimestamp(
@@ -291,6 +293,10 @@ export class SyncEngine {
     );
   }
 
+  private async pendingIds(teamId: string): Promise<Set<string>> {
+    return new Set(await this.cache.outbox.where('team_id').equals(teamId).primaryKeys());
+  }
+
   /** Live-game logs: append-only, pulled incrementally like records. */
   private async pullLog<T extends { id: string; updated_at: string }>(
     teamId: string,
@@ -335,7 +341,7 @@ export class SyncEngine {
         .parse(await this.remote.selectAll(table, { eq, columns: 'id' }))
         .map((row) => row.id),
     );
-    const pending = new Set(await this.cache.outbox.where('team_id').equals(teamId).primaryKeys());
+    const pending = await this.pendingIds(teamId);
     const local = await target.where('team_id').equals(teamId).primaryKeys();
     await target.bulkDelete(local.filter((id) => !visible.has(id) && !pending.has(id)));
     const localSet = new Set(local);
@@ -356,7 +362,11 @@ export class SyncEngine {
       .parse(await this.remote.selectAll('records', { eq, columns: 'id' }));
     const visible = new Set(idRows.map((row) => row.id));
     const localIds = await this.cache.records.where('team_id').equals(teamId).primaryKeys();
-    await this.cache.records.bulkDelete(localIds.filter((id) => !visible.has(id)));
+    // Records created offline are not on the server yet.
+    const pending = await this.pendingIds(teamId);
+    await this.cache.records.bulkDelete(
+      localIds.filter((id) => !visible.has(id) && !pending.has(id)),
+    );
     const local = new Set(localIds);
     const missing = [...visible].filter((id) => !local.has(id));
     for (const ids of chunks(missing, FETCH_CHUNK)) {

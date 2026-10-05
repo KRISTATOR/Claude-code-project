@@ -15,6 +15,7 @@ import {
 } from '@core/model';
 import type { CloneResult } from '@core/lore/clone';
 import type { Cache } from './cache';
+import type { Outbox } from './outbox';
 import { classifyError, RemoteError } from './remote';
 import { call } from './call';
 import type { Client } from './supabase';
@@ -58,31 +59,42 @@ export class Repo {
     private readonly client: Client,
     private readonly cache: Cache,
     private readonly teamId: string,
+    /** Without a connection, record writes wait here (M8). */
+    private readonly outbox: Outbox | null = null,
   ) {}
 
+  /** No connection or a paused project: the write can wait in the outbox. */
+  private canQueue(error: unknown): boolean {
+    const kind = classifyError(error).kind;
+    return this.outbox !== null && (kind === 'offline' || kind === 'paused');
+  }
+
   async createRecord(input: NewRecord): Promise<RecordRow> {
-    const data = await call(
-      this.client
-        .from('records')
-        .insert({
-          team_id: this.teamId,
-          kind: input.kind,
-          title: input.title,
-          data: input.data ?? {},
-          world_id: input.world_id ?? null,
-          game_id: input.game_id ?? null,
-          parent_id: input.parent_id ?? null,
-          visibility: input.visibility ?? 'organizers',
-          inherit_audience: input.inherit_audience ?? false,
-          sort_key: input.sort_key ?? '',
-          tags: input.tags ?? [],
-        })
-        .select()
-        .single(),
-    );
-    const row = recordRow.parse(data);
-    await this.cache.records.put(row);
-    return row;
+    // Ids are made here, so a record created offline keeps its id (§3.1).
+    const row = {
+      id: crypto.randomUUID(),
+      team_id: this.teamId,
+      kind: input.kind,
+      title: input.title,
+      data: input.data ?? {},
+      world_id: input.world_id ?? null,
+      game_id: input.game_id ?? null,
+      parent_id: input.parent_id ?? null,
+      visibility: input.visibility ?? 'organizers',
+      inherit_audience: input.inherit_audience ?? false,
+      sort_key: input.sort_key ?? '',
+      tags: input.tags ?? [],
+    };
+    try {
+      const stored = recordRow.parse(
+        await call(this.client.from('records').insert(row).select().single()),
+      );
+      await this.cache.records.put(stored);
+      return stored;
+    } catch (error) {
+      if (this.outbox && this.canQueue(error)) return this.outbox.createRecord(row);
+      throw error;
+    }
   }
 
   /**
@@ -91,13 +103,21 @@ export class Repo {
    * with kind "conflict" is thrown.
    */
   async updateRecord(id: string, expectedRev: number, patch: RecordPatch): Promise<RecordRow> {
-    const rows = z
-      .array(recordRow)
-      .parse(
-        await call(
-          this.client.from('records').update(patch).eq('id', id).eq('rev', expectedRev).select(),
-        ),
-      );
+    // An edit of a record with a change still waiting must wait behind it.
+    if (this.outbox && (await this.outbox.has(id))) return this.queueUpdate(id, patch);
+    let rows: RecordRow[];
+    try {
+      rows = z
+        .array(recordRow)
+        .parse(
+          await call(
+            this.client.from('records').update(patch).eq('id', id).eq('rev', expectedRev).select(),
+          ),
+        );
+    } catch (error) {
+      if (this.canQueue(error)) return this.queueUpdate(id, patch);
+      throw error;
+    }
     const row = rows[0];
     if (!row) {
       await this.refreshRecord(id);
@@ -105,6 +125,12 @@ export class Repo {
     }
     await this.cache.records.put(row);
     return row;
+  }
+
+  private async queueUpdate(id: string, patch: RecordPatch): Promise<RecordRow> {
+    const local = await this.cache.records.get(id);
+    if (!this.outbox || !local) throw new RemoteError('offline', 'record not in the cache');
+    return this.outbox.updateRecord(local, patch);
   }
 
   /** Re-reads one record from the server into the cache (or removes it). */

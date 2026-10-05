@@ -21,11 +21,13 @@ export interface OutboxRow {
   /** The id of the event or reading it creates, so a replay is harmless. */
   id: string;
   team_id: string;
-  op: 'append_event' | 'record_reading' | 'mark_delivered';
+  op: 'append_event' | 'record_reading' | 'mark_delivered' | 'create_record' | 'update_record';
   args: Record<string, unknown>;
   created_at: string;
   /** Why the server refused it (it stays until someone discards it). */
   error: string | null;
+  /** For an edit in conflict: the newer version on the server. */
+  server?: RecordRow | undefined;
 }
 
 export interface MetaRow {

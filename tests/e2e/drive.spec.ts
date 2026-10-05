@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { connect, launchApp, signUp, stackEnv, uniqueEmail, type LaunchedApp } from './app';
 import { makeDocx, makePdf, makeXlsx, tinyPng } from './fixtures';
+import { inviteCode, joinTeam } from './helpers';
 
 const stack = stackEnv();
 test.skip(!stack, 'needs a Supabase stack (scripts/local-stack or CI)');
@@ -27,24 +28,9 @@ function row(page: Page, name: string) {
   return page.locator(`[data-testid="drive-row"][data-name="${name}"]`);
 }
 
-async function invite(page: Page, role: 'Organizátor' | 'Hráč'): Promise<string> {
-  await go(page, 'Lidé');
-  await page.getByRole('tab', { name: 'Pozvánky' }).click();
-  await page.getByRole('combobox', { name: 'Role', exact: true }).click();
-  await page.getByRole('option', { name: role }).click();
-  await page.getByRole('button', { name: 'Vytvořit pozvánku' }).click();
-  return (await page.getByTestId('invite-code').textContent()) ?? '';
-}
-
-async function joinTeamAs(app: LaunchedApp, name: string, code: string) {
-  if (!stack) return;
-  await connect(app.page, stack);
-  await signUp(app.page, uniqueEmail(name.toLowerCase().split(' ')[0] ?? 'x'));
-  await app.page.getByLabel('Vaše jméno, jak ho uvidí ostatní').fill(name);
-  await app.page.getByLabel('Kód pozvánky').fill(code);
-  await app.page.getByRole('button', { name: 'Připojit se k týmu' }).click();
-  await expect(app.page.getByRole('heading', { name: `Ahoj, ${name}` })).toBeVisible();
-}
+const invite = inviteCode;
+const joinTeamAs = (app: LaunchedApp, name: string, code: string) =>
+  stack ? joinTeam(stack, app, name, code) : Promise.resolve();
 
 test.beforeAll(async () => {
   writeFileSync(

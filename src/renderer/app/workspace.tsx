@@ -9,6 +9,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from 'react';
+import { z } from 'zod';
 import { recordRow, type MemberRole, type MemberRow, type TeamRow } from '@core/model';
 import { call } from '../data/call';
 import { openCache, type Cache } from '../data/cache';
@@ -229,7 +230,7 @@ export interface TeamContextValue {
   repo: Repo;
   /** Live-game writes that also work offline (event log, trackers, "doručeno"). */
   outbox: Outbox;
-  /** Organizer and able to reach the server. */
+  /** Organizer, not in "view as player". Offline edits wait in the outbox (M8). */
   canEdit: boolean;
   /** Organizer or NPC actor: may log events and readings, online or not. */
   canLog: boolean;
@@ -251,16 +252,27 @@ export function TeamProvider({
   children: ReactNode;
 }) {
   const { client } = useBackend();
-  const { cache, offline } = useWorkspace();
+  const { cache } = useWorkspace();
   const status = useSyncStatus();
   const { engine, user } = useWorkspace();
-  const repo = useMemo(() => new Repo(client, cache, team.id), [client, cache, team.id]);
   const outbox = useMemo(
     () =>
       new Outbox(
-        (fn, args) => client.rpc(fn, args),
-        async (id) =>
-          recordRow.parse(await call(client.from('records').select().eq('id', id).single())),
+        {
+          rpc: (fn, args) => client.rpc(fn, args),
+          fetchRecord: async (id) =>
+            recordRow.parse(await call(client.from('records').select().eq('id', id).single())),
+          insertRecord: async (row) =>
+            recordRow.parse(await call(client.from('records').insert(row).select().single())),
+          updateRecord: async (id, rev, patch) =>
+            z
+              .array(recordRow)
+              .parse(
+                await call(
+                  client.from('records').update(patch).eq('id', id).eq('rev', rev).select(),
+                ),
+              )[0] ?? null,
+        },
         cache,
         team.id,
         me.person_id,
@@ -270,6 +282,10 @@ export function TeamProvider({
         },
       ),
     [client, cache, team.id, me.person_id, user.id, engine],
+  );
+  const repo = useMemo(
+    () => new Repo(client, cache, team.id, outbox),
+    [client, cache, team.id, outbox],
   );
   // Send what waits in the outbox: now, when the connection returns, and
   // every 15 seconds while anything is queued.
@@ -284,7 +300,10 @@ export function TeamProvider({
       window.removeEventListener('online', flush);
     };
   }, [outbox, readOnly]);
-  const reachable = !offline && status.state !== 'offline' && status.state !== 'paused';
+  // A successful sync means the server is reachable again: send the queue.
+  useEffect(() => {
+    if (!readOnly && status.state === 'idle') void outbox.flush();
+  }, [outbox, readOnly, status.state]);
   const value = useMemo<TeamContextValue>(
     () => ({
       team,
@@ -293,10 +312,10 @@ export function TeamProvider({
       repo,
       outbox,
       isOrganizer: me.role === 'organizer',
-      canEdit: me.role === 'organizer' && reachable && !readOnly,
+      canEdit: me.role === 'organizer' && !readOnly,
       canLog: (me.role === 'organizer' || me.role === 'npc') && !readOnly,
     }),
-    [team, me, repo, outbox, reachable, readOnly],
+    [team, me, repo, outbox, readOnly],
   );
   return <TeamContext.Provider value={value}>{children}</TeamContext.Provider>;
 }

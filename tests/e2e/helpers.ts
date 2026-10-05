@@ -136,3 +136,28 @@ export async function setOffline(page: Page, offline: boolean): Promise<void> {
     uploadThroughput: -1,
   });
 }
+
+/** Creates an invite with the given role and returns its code. */
+export async function inviteCode(page: Page, role: 'Organizátor' | 'Hráč'): Promise<string> {
+  await go(page, 'Lidé');
+  await page.getByRole('tab', { name: 'Pozvánky' }).click();
+  await page.getByRole('combobox', { name: 'Role', exact: true }).click();
+  await page.getByRole('option', { name: role }).click();
+  await page.getByRole('button', { name: 'Vytvořit pozvánku' }).click();
+  return (await page.getByTestId('invite-code').textContent()) ?? '';
+}
+
+/** Signs a new account up and joins the team with an invite code. */
+export async function joinTeam(
+  stack: StackEnv,
+  app: LaunchedApp,
+  name: string,
+  code: string,
+): Promise<void> {
+  await connect(app.page, stack);
+  await signUp(app.page, uniqueEmail(name.toLowerCase().split(' ')[0] ?? 'x'));
+  await app.page.getByLabel('Vaše jméno, jak ho uvidí ostatní').fill(name);
+  await app.page.getByLabel('Kód pozvánky').fill(code);
+  await app.page.getByRole('button', { name: 'Připojit se k týmu' }).click();
+  await expect(app.page.getByRole('heading', { name: `Ahoj, ${name}` })).toBeVisible();
+}

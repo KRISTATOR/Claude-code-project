@@ -402,4 +402,28 @@ describe('SyncEngine', () => {
       [onServer, pending].sort(),
     );
   });
+
+  it('keeps records with changes waiting in the outbox', async () => {
+    const edited = randomUUID();
+    const created = randomUUID();
+    remote.visible.records = [record(edited, clock, { title: 'Na serveru' })];
+    await engine.sync(teamId);
+    await cache.records.put({ ...record(edited, clock), title: 'Upraveno offline' } as never);
+    await cache.records.put(record(created, clock, { title: 'Nové offline' }) as never);
+    for (const id of [edited, created]) {
+      await cache.outbox.put({
+        id,
+        team_id: teamId,
+        op: id === created ? 'create_record' : 'update_record',
+        args: {},
+        created_at: at(clock),
+        error: null,
+      });
+    }
+    remote.visible.records = [record(edited, clock + 1000, { title: 'Na serveru 2' })];
+    clock += 5000;
+    await engine.sync(teamId, { reconcile: true });
+    expect((await cache.records.get(edited))?.title).toBe('Upraveno offline');
+    expect((await cache.records.get(created))?.title).toBe('Nové offline');
+  });
 });
