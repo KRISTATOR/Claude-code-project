@@ -3,6 +3,42 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 0.6.0: Milestone 5, items, economy and maps (2026-10-05)
+
+No database changes.
+
+### Added
+- **Předměty a peníze:** the item catalogue (category, price and buy-back
+  price, effect, condition or upkeep, availability by phase, trade regime –
+  free, rationed, banned, black market only – requisitionable, starting
+  owner and count, card or real prop, travel speed for mounts and carts,
+  organizer notes). Prices shown for any phase.
+- **Money:** the game's currency with Czech forms (1 orel, 2 orly, 5 orlů), a
+  sub-unit (1 orel 5 grošů) and a price multiplier per phase.
+- **Majetek:** the ownership ledger. Holdings come from the starting owners
+  plus every transfer, in time order; a transfer from someone who does not
+  have enough is flagged. The character sheet's "Majetek" section shows what
+  the character holds.
+- **Item cards and ration coupons** printed eight to an A4 sheet.
+- **Recepty:** potions, crafting conversions ("100 ml mléka → 20 g sýra za 1
+  orla") and plants, with ingredients, result, cost, verification steps and
+  properties.
+- **Nálezy:** loot tables and forest finds per place (item, how it is found,
+  tracks).
+- **Sklad rekvizit:** the group's own props across all games (count,
+  storage place, condition).
+- **Mapy:** a map editor for the venue and in-world maps: markers with
+  icons, zones, paths, rope lines, gates, numbered buildings, labels, a scale
+  bar and a compass, on a blank canvas or a scan from the drive. Layers have
+  their own visibility, so a secret layer stays with organizers while players
+  see a clean map. Map objects link to wiki places, location signs, items
+  and clues. Export to PNG and to PDF at A4 or A3.
+- **Cesty:** walking times between off-site places, a distance table and a
+  travel calculator that finds the quickest route and applies mounts and
+  vehicles from the catalogue (horse ×3, mule ×2, ox ×1,5, cart ×0,75).
+- **Spaní:** the sleeping plan with capacity checks and moves from a given
+  phase on (and the in-game rules that cause them).
+
 ## 0.5.0: Milestone 4, prop documents and printing (2026-10-05)
 
 No database changes.

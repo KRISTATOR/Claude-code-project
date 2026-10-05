@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0 to 4 are done; next is M5.**
+Status: **approved 2026-10-05. Milestones 0 to 5 are done; next is M6.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -519,7 +519,7 @@ registrations   id, team_id, game_id, person_id, status, consent_on_file, allerg
 | M2 | `character`, `character_profile`, `sheet_template`, `npc`, `npc_appearance`, `faction` (faction, opinion group, clan, ethnic or religious group), `relationship`, `definition` (race, class, profession, skill), `phase`, `block` |
 | M3 | `page` (subtypes: place, organization, off-stage person, law or decree, religion, historical event, real-history note), `canon_entry`, `history_event`, `beat` (run-of-show), `plot_thread`, `clue`, `quest`, `hook`, `issue`, `rulebook`, `rule_section`, `glossary_term`, `rulebook_version` (a frozen published copy) |
 | M4 | `prop_document`, `writer_profile`, `form_template`, `location_sign`, `archive`, `archive_part`, `print_job`, `diary_design` |
-| M5 | `item`, `currency`, `recipe`, `loot_table`, `inventory_item` (props the group owns), `map`, `map_layer`, `travel_route`, `sleeping_plan` |
+| M5 | `item`, `currency`, `transfer` (one ledger line), `recipe`, `loot_table`, `inventory_item` (props the group owns, team-wide), `map`, `map_layer`, `travel_route`, `sleeping_plan` |
 | M6 | `meal`, `dish`, `ingredient`, `budget_line`, `equipment_list`, `task`, `note`, `survey` |
 | M7 | `tracker_definition` (+ tables `event_log`, `tracker_readings`) |
 
@@ -750,6 +750,12 @@ Each milestone ends with a stop for your review.
 * Distance table and travel calculator with modifiers from the item
   catalogue.
 * Sleeping plan with capacity checks and rules that change it mid-game.
+
+* As built: the ledger is a `transfer` record per movement; holdings are
+  computed (starting owners + transfers in time order), never stored. Map
+  objects live inside their layer's `data`, so a layer's visibility covers
+  everything on it. Travel uses Dijkstra over routes; mounts multiply the
+  speed. Sleeping assignments carry the phase they start in.
 
 ### M6: Logistics
 * Menu → dishes → ingredients; consolidated shopping list for a given
