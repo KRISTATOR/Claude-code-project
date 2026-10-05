@@ -103,7 +103,7 @@ To publish it:
    **Create new tag on publish**. Target: the branch Claude says the
    milestone is on.
 3. Click **Publish release**.
-4. Watch **Actions** → **Release**. It takes about 15 minutes. It runs all
+4. Watch **Actions** → **Release**. It takes about 5 minutes. It runs all
    the tests on Windows, builds `Zazemi-Setup-0.1.0.exe`, attaches it to the
    release, and (with step 2 done) publishes it to `zazemi-releases`.
 
@@ -121,5 +121,5 @@ a release.
 ### GitHub Actions minutes
 
 A private repo on a free GitHub account gets 2,000 Actions minutes a month,
-and Windows minutes count double. A release uses about 30 billed minutes; the
+and Windows minutes count double. A release uses about 10 billed minutes; the
 Linux checks on each push use about 5. That's comfortable at our pace.
