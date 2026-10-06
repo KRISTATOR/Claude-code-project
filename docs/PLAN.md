@@ -1,6 +1,6 @@
 # Zázemí: plan
 
-Status: **approved 2026-10-05. Milestones 0 to 7 are done; next is M8.**
+Status: **approved 2026-10-05. All milestones (0 to 8) are done: version 1.0.**
 Last updated: 2026-10-05.
 
 Zázemí is a Windows desktop app for the Chýnický LARP organizers. It has two
@@ -391,7 +391,7 @@ the bytes.
 |---|---|
 | M1a | The app opens read-only from the cache, with a banner "Offline: data z 5. 10. 2026 14:32". Editing is disabled in one place (a `useCanEdit()` hook). Files open read-only if they're in the blob cache. |
 | M7 | An outbox for event-log entries, tracker readings and "delivered" marks. Each has an ID generated on the client, so replaying it is harmless. |
-| M8 | General queued edits, with the conflict UI from §2.3. |
+| M8 | General queued edits of records, with the conflict UI from §2.3 (done). Files, invites and visibility still need a connection. |
 
 The app tells the difference between being offline, Supabase being paused,
 and Supabase being down, and says which one it is.
@@ -804,6 +804,21 @@ Each milestone ends with a stop for your review.
 * Queued offline edits with conflict resolution; restoring from a backup.
 * Onboarding tour; user guide in Czech; a final round of 1366×768 and
   keyboard checks.
+
+* As built: main reads zip archives itself (central directory, zip64, one
+  entry at a time with fflate) so multi-gigabyte Takeout parts never load
+  into memory; the renderer gets a token and entry numbers, never a path.
+  The import plan (`src/core/files/takeout.ts`) strips Takeout's wrapper
+  folders and skips Forms, Google link stubs, junk and oversized files;
+  identical "(1)" copies and files already in the drive are skipped while
+  uploading, so an interrupted import can just be run again. Restore
+  (`src/core/restore.ts`) inserts what the server is missing, parents
+  first; into another team it remaps every id inside `data` too. Offline
+  record edits use the M7 outbox: one entry per record (later edits merge
+  into it), sent with the revision they started from; a mismatch becomes a
+  conflict resolved in a side-by-side dialog (keep mine, take theirs, keep
+  both). Record ids are now generated on the client. The tour shows once
+  per account and computer; test builds skip it unless `ZAZEMI_TOUR=1`.
 
 ---
 

@@ -173,3 +173,6 @@ Release workflow: `.github/workflows/release.yml`; installer config:
 | 2026-10-05 | Sync reads disable postgrest-js retries; the engine re-syncs on a timer and on realtime pokes. |
 | 2026-10-05 | Storage objects are named `<team>/<file>/<version>`; storage RLS reuses `can_read_id(file)`. One version row per check-out session; a save after losing the lock is a conflict version. |
 | 2026-10-05 | Trashing a folder trashes its contents with the same timestamp; restoring restores them together. |
+| 2026-10-06 | Main reads zip archives (Takeout, backups) entry by entry; the renderer gets tokens, never paths. |
+| 2026-10-06 | Offline record edits reuse the live-game outbox: one entry per record, sent with its starting `rev`; mismatches are resolved by the user (keep mine, take theirs, keep both). |
+| 2026-10-06 | Registrations, the event log and tracker readings are tables of their own, not records; players never read the live logs. |

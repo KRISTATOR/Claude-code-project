@@ -5,10 +5,13 @@ shared drive that opens files in the real Microsoft Office apps, plus LARP
 planning tools (characters, lore, timeline, prop documents, items, maps,
 logistics, live-game dashboard).
 
-> **Status: Milestone 1b.** Accounts, teams and invites, the secrecy model,
-> offline read-only mode, and the shared drive with Office check-out, versions,
-> previews and search. The LARP tools arrive in later milestones (see
-> [`docs/PLAN.md`](docs/PLAN.md) and [`docs/CHANGELOG.md`](docs/CHANGELOG.md)).
+> **Status: 1.0 – all milestones (M0–M8) are done.** Accounts, teams and the
+> secrecy model; the shared drive with Office check-out, versions, previews,
+> search and Google Drive/Takeout import; characters and NPCs; lore and time;
+> prop documents and printing; items, money and maps; logistics; the
+> live-game dashboard; offline work with a queue and conflict resolution;
+> backup and restore. The Czech user guide is in the app under *Nápověda*
+> (source: [`src/renderer/help/navod.md`](src/renderer/help/navod.md)).
 
 * **Plan, architecture, milestones:** [`docs/PLAN.md`](docs/PLAN.md)
 * **One-time setup (Supabase, GitHub):** [`docs/SETUP.md`](docs/SETUP.md)
@@ -61,6 +64,11 @@ the warning again.
 * **Organizers' computers hold every secret in a local cache** (so the app
   works offline at the farm). Turn on Windows device encryption or BitLocker
   on organizer laptops.
+* **Offline, records can be edited but files can't be uploaded.** Edits,
+  live-game log entries and tracker values wait in a queue and are sent when
+  the connection returns; if someone changed the same record meanwhile, the
+  app shows both versions and asks which one wins. File uploads, Office
+  check-out, invites and visibility changes need a connection.
 * **No telemetry or analytics.** The app talks only to our own Supabase
   project and, for updates, to GitHub.
 

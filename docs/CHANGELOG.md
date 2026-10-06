@@ -3,6 +3,42 @@
 All notable changes to Zázemí. Versions follow [semver](https://semver.org/);
 each milestone ends with a release.
 
+## 1.0.0: Milestone 8, import and polish (2026-10-06)
+
+No database changes.
+
+### Added
+- **Import from Google Drive:** *Nahrát soubory* → *Importovat z Google
+  Disku (.zip)* takes a Drive download or all parts of a Google Takeout
+  export at once (also zip64 archives over 4 GB). The folder structure is
+  kept and Takeout's own wrapper folders are dropped. It skips Forms, Google
+  link stubs, Office lock files and files over 50 MB, plus Google's
+  identical "(1)" copies and anything already in the drive, so an
+  interrupted import can simply be run again. At the end there is a report
+  of what came in, what was skipped and why, and what failed; you can save
+  it as a text file. Dragging folders in uses the same rules.
+- **Restore from a backup** (Nastavení → Záloha): puts back what the server
+  is missing (records, organizer-only parts, who-sees-what, attached
+  players, file contents and, if they were backed up, registrations) and
+  changes nothing that exists. A backup can also be restored into a new
+  team, for example after moving to a new Supabase project. Records then
+  get new ids and people are added without accounts.
+- **Offline editing:** organizers can create and edit records without a
+  connection. Changes show at once, wait in the queue (the *Čeká* badge)
+  and are sent when the connection returns. If someone else changed the
+  same record meanwhile, the badge turns red and *Porovnat* shows both
+  versions side by side: keep mine, take theirs, or keep both (mine is
+  saved as a copy).
+- **First-run tour** for organizers, NPC actors and players. It can be
+  started again from Settings.
+- **Nápověda:** the Czech user guide inside the app, with a table of
+  contents.
+
+### Changed
+- Records get their ids on the client.
+- In the Ctrl+K palette, Enter opens the first result.
+- The offline banner explains what works offline.
+
 ## 0.8.0: Milestone 7, live game (2026-10-05)
 
 Database: new `event_log` and `tracker_readings` tables (migration
