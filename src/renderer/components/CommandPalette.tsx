@@ -64,7 +64,20 @@ export function CommandPalette({ pages }: { pages: PaletteItem[] }) {
       highlightQuery
       scrollable
       maxHeight={420}
-      searchProps={{ leftSection: <IconSearch size={18} />, placeholder: t('palette.placeholder') }}
+      searchProps={{
+        leftSection: <IconSearch size={18} />,
+        placeholder: t('palette.placeholder'),
+        // Enter with nothing highlighted opens the first result.
+        onKeyDown: (event) => {
+          if (event.key !== 'Enter') return;
+          const list = event.currentTarget.closest('.mantine-Spotlight-content');
+          if (list?.querySelector('.mantine-Spotlight-action[data-selected]')) return;
+          const first = list?.querySelector<HTMLButtonElement>('.mantine-Spotlight-action');
+          if (!first) return;
+          event.preventDefault();
+          first.click();
+        },
+      }}
     />
   );
 }

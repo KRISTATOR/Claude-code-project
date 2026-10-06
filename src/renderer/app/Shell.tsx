@@ -16,6 +16,7 @@ import {
 import { spotlight } from '@mantine/spotlight';
 import {
   IconActivityHeartbeat,
+  IconHelp,
   IconBackpack,
   IconBolt,
   IconBriefcase,
@@ -109,6 +110,8 @@ import { RunOfShowPage } from '../lore/RunOfShowPage';
 import { WikiPage } from '../lore/WikiPage';
 import { HomePage } from './pages/HomePage';
 import { OutboxBadge } from '../components/OutboxBadge';
+import { HelpPage } from '../help/HelpPage';
+import { Tour } from './Tour';
 import { LivePage } from '../live/LivePage';
 import { TrackersPage } from '../live/TrackersPage';
 import { BudgetPage } from '../logistics/BudgetPage';
@@ -293,6 +296,7 @@ export function Shell() {
     { to: '/sklad', label: t('nav.inventory'), icon: <IconBox size={18} />, organizerOnly: true },
     { to: '/kos', label: t('nav.trash'), icon: <IconTrash size={18} />, organizerOnly: true },
     { to: '/nastaveni', label: t('nav.settings'), icon: <IconSettings size={18} /> },
+    { to: '/napoveda', label: t('nav.help'), icon: <IconHelp size={18} /> },
   ];
   const allowed = (items: NavItem[]) =>
     items.filter(
@@ -431,6 +435,7 @@ export function Shell() {
         )}
         <UpdateBanner />
         <StatusBanner />
+        <Tour />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/svety" element={<WorldsPage />} />
@@ -476,6 +481,7 @@ export function Shell() {
           <Route path="/cesty" element={<TravelPage />} />
           <Route path="/spani" element={<SleepingPage />} />
           <Route path="/sklad" element={<InventoryPage />} />
+          <Route path="/napoveda" element={<HelpPage />} />
           <Route path="/zive" element={<LivePage />} />
           <Route path="/stav" element={<TrackersPage />} />
           <Route path="/prihlasky" element={<RegistrationsPage />} />

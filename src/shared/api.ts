@@ -10,6 +10,8 @@ export interface AppInfo {
   configFromBuild: boolean;
   /** Computer name, shown on file locks ("Kvido – NOTEBOOK-KVIDO"). */
   machine: string;
+  /** Whether the first-run tour may open (always in release builds). */
+  showTour: boolean;
 }
 
 export type OpenResult = { ok: true } | { ok: false; error: 'no-app' | 'io'; message: string };

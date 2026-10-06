@@ -33,6 +33,7 @@ import { notifyError, notifySuccess } from '../../components/notify';
 import { ThemeSwitch } from '../../components/ThemeSwitch';
 import { useUpdateStatus } from '../../components/UpdateBanner';
 import { useBackend } from '../backend';
+import { TOUR_EVENT } from '../Tour';
 import { useSession } from '../session';
 import { useTeam, useWorkspace } from '../workspace';
 
@@ -47,6 +48,13 @@ export function SettingsPage() {
       <Connection />
       <Section title={t('settings.appearance')}>
         <ThemeSwitch />
+        <Button
+          variant="subtle"
+          w="fit-content"
+          onClick={() => window.dispatchEvent(new Event(TOUR_EVENT))}
+        >
+          {t('tour.restart')}
+        </Button>
       </Section>
       <Updates />
     </Stack>

@@ -44,6 +44,8 @@ export function registerIpcHandlers(onConfigChanged: () => void): void {
     platform: process.platform,
     isPackaged: app.isPackaged,
     configFromBuild: buildTimeConfig() !== null,
+    // Test builds skip the first-run tour unless a test asks for it.
+    showTour: !__ZAZEMI_TEST_BUILD__ || process.env['ZAZEMI_TOUR'] === '1',
     machine: hostname().slice(0, 100),
   }));
 

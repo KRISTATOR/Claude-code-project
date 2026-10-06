@@ -167,6 +167,7 @@ export const cs = {
     feedback: 'Zpětná vazba',
     live: 'Živá hra',
     trackers: 'Stav postav',
+    help: 'Nápověda',
     gameSection: 'Hra',
     noGame: 'Nejdřív založte hru v sekci Světy a hry.',
     chooseGame: 'Vyberte hru',
@@ -1663,6 +1664,59 @@ export const cs = {
     keepTheirs: 'Vzít jejich',
     keepBoth: 'Ponechat obě',
     copyTitle: '{{title}} (moje verze)',
+  },
+  help: {
+    title: 'Nápověda',
+    contents: 'Obsah',
+  },
+  tour: {
+    next: 'Další',
+    back: 'Zpět',
+    skip: 'Přeskočit',
+    done: 'Začít',
+    restart: 'Spustit úvodního průvodce znovu',
+    steps: {
+      welcome: {
+        title: 'Vítejte v Zázemí',
+        body: 'Zázemí je společné zákulisí vašeho týmu: sdílený disk s dokumenty a nástroje na přípravu i vedení hry. Projdeme spolu, co kde najdete. Trvá to minutu.',
+      },
+      worlds: {
+        title: 'Světy a hry',
+        body: 'Začněte v sekci Světy a hry: založte svět a v něm hru. Hru, na které právě pracujete, přepínáte v menu vlevo. Hru jde naklonovat jako základ pro pokračování.',
+      },
+      secrecy: {
+        title: 'Kdo co vidí',
+        body: 'Každý nový záznam vidí nejdřív jen organizátoři. V rámečku „Kdo to vidí“ ho ukážete vybraným lidem nebo všem. Přes „Zobrazit jako…“ zkontrolujete, co přesně uvidí hráč.',
+      },
+      drive: {
+        title: 'Disk a Office',
+        body: 'Na Disk nahrajte soubory nebo celou složku, případně import z Google Disku (.zip). Soubor otevřený ve Wordu je pro ostatní zamčený a každé uložení je nová verze.',
+      },
+      tools: {
+        title: 'Příprava hry',
+        body: 'V menu najdete postavy a vztahy, Příběh (encyklopedie, kánon, zápletky, pravidla), Svět hry (mapy, předměty, cesty), Tisk (dokumenty a písma) a Organizaci (přihlášky, jídlo, rozpočet).',
+      },
+      live: {
+        title: 'Živá hra i bez signálu',
+        body: 'Během hry použijte Živou hru a Stav postav. Zápisy i úpravy fungují i bez připojení – počkají ve frontě a odešlou se samy.',
+      },
+      player: {
+        title: 'Vaše postava',
+        body: 'V sekci Postavy najdete svůj list postavy. V Příběhu jsou veřejné stránky encyklopedie a pravidla, která vám organizátoři ukázali.',
+      },
+      registration: {
+        title: 'Přihláška a vybavení',
+        body: 'V Organizaci → Moje přihláška si opravíte alergie a kontakt v nouzi. Ve Vybavení je seznam věcí, které si máte přivézt.',
+      },
+      npc: {
+        title: 'CP a živá hra',
+        body: 'V sekci CP a Harmonogram CP najdete své výstupy. Během hry zapisujte do deníku v Živé hře a měňte Stav postav – i bez signálu.',
+      },
+      help: {
+        title: 'Nápověda',
+        body: 'Ctrl+K otevře hledání a rychlý přechod kamkoli. Podrobný návod je v sekci Nápověda dole v menu.',
+      },
+    },
   },
   clone: {
     button: 'Klonovat jako pokračování',
