@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Dead Air</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-phase="title">
+    <!-- Every visible string is filled in from STRINGS in callers.js. -->
+    <div class="room" id="room">
+      <div class="lamp-glow" aria-hidden="true"></div>
+
+      <header class="topbar">
+        <div class="plate">
+          <span class="plate-title" data-i18n="title"></span>
+          <span class="plate-sub" data-i18n="stationLine"></span>
+        </div>
+        <div class="onair" id="onAir" data-i18n="onAir"></div>
+        <div class="clock-box">
+          <div class="clock">
+            <span id="clockH">22</span><span class="colon">:</span><span id="clockM">00</span>
+          </div>
+          <div class="clock-date" data-i18n="date"></div>
+        </div>
+        <div class="top-buttons">
+          <button type="button" class="pill" id="btnMute" aria-pressed="false">
+            <span></span>
+          </button>
+          <button type="button" class="pill" id="btnPause" aria-pressed="false">
+            <span></span>
+          </button>
+          <button type="button" class="pill" id="btnNew"><span></span></button>
+        </div>
+      </header>
+
+      <main class="console">
+        <section class="panel meters">
+          <div class="vu">
+            <div class="vu-face">
+              <div class="vu-scale" id="vuScale"></div>
+              <span class="vu-label" data-i18n="vu"></span>
+              <div class="vu-needle" id="vuNeedle"></div>
+              <div class="vu-pivot"></div>
+            </div>
+          </div>
+          <div class="meter trust">
+            <div class="meter-head">
+              <span data-i18n="trust"></span>
+              <span class="meter-delta" id="trustDelta"></span>
+              <span class="meter-value" id="trustValue">50</span>
+            </div>
+            <div class="meter-bar" id="trustBar"></div>
+          </div>
+          <div class="meter heat">
+            <div class="meter-head">
+              <span data-i18n="heat"></span>
+              <span class="meter-delta" id="heatDelta"></span>
+              <span class="meter-value" id="heatValue">15</span>
+            </div>
+            <div class="meter-bar" id="heatBar"></div>
+          </div>
+          <div class="tally">
+            <div><b id="tallyCalls">00</b><span data-i18n="tallyCalls"></span></div>
+            <div><b id="tallySongs">00</b><span data-i18n="tallySongs"></span></div>
+            <div><b id="tallyBroken">00</b><span data-i18n="tallyBroken"></span></div>
+          </div>
+          <div class="memo-pin" id="memoPin" hidden>
+            <span class="memo-pin-title" data-i18n="memoPin"></span>
+            <span class="memo-pin-text" id="memoPinText"></span>
+            <span class="memo-pin-left" id="memoPinLeft"></span>
+          </div>
+        </section>
+
+        <section class="panel line">
+          <div class="switchboard">
+            <div class="lamps" aria-hidden="true">
+              <span class="lamp"></span><span class="lamp"></span><span class="lamp"></span>
+            </div>
+            <span class="line-status" id="lineStatus"></span>
+            <button type="button" class="key pickup" id="btnPickUp" disabled>
+              <kbd>␣</kbd><span data-i18n="pickUp"></span>
+            </button>
+          </div>
+          <article class="card card-idle" id="card">
+            <header class="card-head">
+              <span class="card-kicker" id="cardKicker"></span>
+              <span class="card-badge" id="cardBadge" hidden></span>
+              <span class="card-stamp" id="cardStamp" hidden></span>
+              <h2 class="card-name" id="cardName"></h2>
+              <span class="card-place" id="cardPlace"></span>
+            </header>
+            <p class="card-text" id="cardText"></p>
+            <p class="card-result" id="cardResult" aria-live="polite" hidden></p>
+            <div class="card-notes" id="cardNotes"></div>
+          </article>
+          <div class="choices" id="choices"></div>
+          <div class="deadair" id="deadAir">
+            <span class="deadair-label" id="deadAirLabel"></span>
+            <div class="deadair-track"><div class="deadair-fill" id="deadAirFill"></div></div>
+          </div>
+        </section>
+
+        <section class="panel deck">
+          <div class="tuner">
+            <div class="tuner-window">
+              <div class="tuner-scale" id="tunerScale"></div>
+              <div class="tuner-pointer" id="tunerPointer"></div>
+            </div>
+            <div class="tuner-row">
+              <button
+                type="button"
+                class="tuner-knob"
+                id="tunerKnob"
+                data-i18n-label="tuner"
+              ></button>
+              <div class="tuner-readout"><span id="tunerFreq">69.80</span> <small>MHz</small></div>
+            </div>
+            <div class="tuner-hint" id="tunerHint" aria-live="assertive"></div>
+          </div>
+          <div class="player">
+            <div class="turntable" aria-hidden="true">
+              <div class="platter" id="platter">
+                <div class="record"><div class="record-label"></div></div>
+              </div>
+              <div class="tonearm" id="tonearm"></div>
+            </div>
+            <button type="button" class="key record-key" id="btnRecord">
+              <kbd>R</kbd><span id="recordLabel"></span>
+            </button>
+            <p class="record-info" id="recordInfo"></p>
+          </div>
+          <ol class="log" id="eventLog"></ol>
+        </section>
+      </main>
+
+      <footer class="hints" data-i18n="keys"></footer>
+    </div>
+
+    <canvas class="static" id="staticCanvas" width="160" height="90" aria-hidden="true"></canvas>
+
+    <div class="overlay" id="titleScreen">
+      <div class="sheet title-sheet">
+        <h1 class="title-sign" data-i18n="title"></h1>
+        <p class="title-sub" data-i18n="stationLine"></p>
+        <h2 class="title-when" data-i18n="introTitle"></h2>
+        <div class="title-intro" id="titleIntro"></div>
+        <h3 data-i18n="howToTitle"></h3>
+        <ul class="howto" id="titleHowTo"></ul>
+        <div class="title-buttons">
+          <button type="button" class="big-button" id="btnStart"></button>
+          <button type="button" class="pill" id="btnTitleNew" data-i18n="newNight" hidden></button>
+        </div>
+        <p class="title-status" id="titleStatus"></p>
+        <p class="hints" data-i18n="keys"></p>
+      </div>
+    </div>
+
+    <div class="overlay" id="endScreen" hidden>
+      <div class="sheet end-sheet">
+        <p class="end-kicker" id="endKicker"></p>
+        <h1 class="end-title" id="endTitle"></h1>
+        <p class="end-text" id="endText"></p>
+        <p class="end-meters" id="endMeters"></p>
+        <div class="end-columns">
+          <section>
+            <h3 data-i18n="endDid"></h3>
+            <ol class="end-list" id="endDid"></ol>
+          </section>
+          <section>
+            <h3 data-i18n="endFates"></h3>
+            <ul class="end-list fates" id="endFates"></ul>
+          </section>
+        </div>
+        <p class="end-stats" id="endStats"></p>
+        <p class="end-found" id="endFound"></p>
+        <ul class="end-found-list" id="endFoundList"></ul>
+        <p class="end-history" id="endHistory"></p>
+        <button type="button" class="big-button" id="btnEndNew" data-i18n="newNight"></button>
+      </div>
+    </div>
+
+    <div class="overlay pause" id="pauseScreen" hidden>
+      <div class="sheet pause-sheet">
+        <h2 data-i18n="paused"></h2>
+        <p data-i18n="pausedHint"></p>
+        <button type="button" class="big-button" id="btnResume" data-i18n="resume"></button>
+      </div>
+    </div>
+
+    <script src="callers.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
