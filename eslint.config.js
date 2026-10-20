@@ -67,4 +67,17 @@ export default tseslint.config(
     files: ['scripts/**/*.mjs'],
     languageOptions: { globals: globals.node },
   },
+  {
+    // Dead Air: a standalone browser game in plain scripts, no build step.
+    files: ['dead-air/**/*.{js,mjs}'],
+    ...tseslint.configs.disableTypeChecked,
+  },
+  {
+    files: ['dead-air/**/*.js'],
+    languageOptions: { sourceType: 'script', globals: globals.browser },
+  },
+  {
+    files: ['dead-air/tools/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+  },
 );
